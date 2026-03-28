@@ -18,7 +18,10 @@ int MotorR_I3 = BIN1, MotorR_I4 = BIN2, MotorL_I1 = AIN1, MotorL_I2 = AIN2;
 int MotorL_PWML = PWMA, MotorR_PWMR = PWMB;
 int lastsum = 0;
 bool innode = 0;
-int delaytime = 20;
+const int TARGET_FPS = 50;
+int targetLoopTime = 1000/TARGET_FPS;
+unsigned long lastLoopstartTime = 0;
+unsigned long nextLoopTime = 0;
 int turntime = 0;
 int dir;
 bool turning = 0;
@@ -115,7 +118,7 @@ void MotorWriting(double vL, double vR) {
 
 
 
-void Tracking() {
+void Tracking(int deltaTime) {
   if (stop) {
     MotorWriting(0, 0);
     return;
@@ -135,7 +138,7 @@ void Tracking() {
     else if (dir == 1 || dir == 3)
       MotorWriting(turnspeed, -turnspeed);
       
-    turntime+=delaytime;
+    turntime += deltaTime;
     if (dir == 2 && IR[0] == 0 && IR[4] == 0) {
       turning = 0;
       innode = 0;
@@ -188,17 +191,36 @@ void setup() {
   initMotor();
 }
 
-void loop(){
-  Tracking();
-  delay(delaytime);
-  /*MotorWriting(210, 200);
-  delay(5000);
-  MotorWriting(210, -200);
-  delay(2000);
-  MotorWriting(-210, -200);
-  delay(5000);*/
+void loop() {
+  unsigned long currentTime = millis();
 
-  //testIR();
-  //testRFID();
-  //testMotor();
+  // 只有時間到了，才執行 Tracking
+  if (currentTime >= nextLoopTime) {
+    int deltatime = currentTime - lastLoopstartTime;
+    lastLoopstartTime = currentTime;
+    
+    // 設定下一次執行目標時間
+    nextLoopTime = currentTime + targetLoopTime;
+
+    Tracking(deltatime);
+
+    /*MotorWriting(210, 200);
+    delay(5000);
+    MotorWriting(210, -200);
+    delay(2000);
+    MotorWriting(-210, -200);
+    delay(5000);*/
+
+    //testIR();
+    //testRFID();
+    //testMotor();
+    
+    // 把數據傳給 Python
+    
+  }
+
+  // 藍牙指令
+  if (Serial.available() > 0) {
+    // Read "s"
+  }
 }
