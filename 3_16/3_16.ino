@@ -1,5 +1,7 @@
 #include <SPI.h>
 #include <MFRC522.h>
+#include <string.h>
+#define CUSTOM_NAME "HM10_12"
 
 const int analognum = 5;
 const int analogPin[analognum] = {A7, A6, A5, A4, A3};
@@ -24,8 +26,12 @@ int dir;
 bool turning = 0;
 bool stop = 0;
 // left right forward baackward
-int mode[] = {1, 3, 2, 3, 0, -1}; 
+int mode[] = {1, 3, 2, 3, 0, 3, 2, 3}; 
 int state = 0;
+
+// BLUE TOOTH
+long baudRates[] = {9600, 19200, 38400, 57600, 115200, 4800, 2400, 1200, 230400};
+bool moduleReady = false;
 
 void initIR() {
   for (int i = 0 ; i < analognum ; i++) pinMode(analogPin[i] , INPUT); // 目前預設該接腳作為輸入
@@ -39,7 +45,7 @@ int* testIR() {
     Serial.println(sensorValue); // 將數值印出來
   }
   Serial.println("__________________");
-  //delay (2000); // 延遲 2 秒
+  delay (500); // 延遲 2 秒
   return r;
 }
 
@@ -55,6 +61,63 @@ void initRFID() {
   Serial.println(F("Read UID on a MIFARE PICC:"));
 }
 
+void initBlueTooth() {
+  Serial.begin(115200); // Debug Monitor (USB)
+  while (!Serial);
+  Serial.println("Initializing HM-10...");
+
+  // 1. Automatic Baud Rate Detection
+  for (int i = 0; i < 9; i++) {
+    Serial.print("Testing baud rate: ");
+    Serial.println(baudRates[i]);
+    
+    Serial3.begin(baudRates[i]);
+    Serial3.setTimeout(100);
+
+    // 2. Force Disconnection
+    // Sending "AT" while connected forces the module to disconnect [2].
+    Serial3.print("AT"); 
+    
+    if (waitForResponse("OK", 800)) {
+      Serial.println("HM-10 detected and ready.");
+      moduleReady = true;
+      break; 
+    } else {
+      Serial3.end();
+    }
+  }
+
+  if (!moduleReady) {
+    Serial.println("Failed to detect HM-10. Check 3.3V VCC and wiring.");
+    return;
+  }
+
+  // 3. Restore Factory Defaults
+  Serial.println("Restoring factory defaults...");
+  sendATCommand("AT+RENEW"); // Restores all setup values
+
+  // 4. Set Custom Name via Macro
+  Serial.print("Setting name to: ");
+  Serial.println(CUSTOM_NAME);
+  String nameCmd = "AT+NAME" + String(CUSTOM_NAME);
+  sendATCommand(nameCmd.c_str()); // Max length is 12
+  
+  // 5. Enable Connection Notifications
+  Serial.println("Enabling notifications...");
+  sendATCommand("AT+NOTI1"); // Notify when link is established/lost
+
+  // 6. Get the Bluetooth MAC Address
+  Serial.println("Querying Bluetooth Address");
+  sendATCommand("AT+ADDR?");
+
+  // 7. Restart the module to apply changes
+  Serial.println("Restarting module...");
+  sendATCommand("AT+RESET"); // Restart the module
+  Serial3.begin(9600); // Now the module would use baudrate 9600
+  
+  Serial.println("Initialization Complete.");
+}
+
 void testRFID() {
   if(!mfrc522->PICC_IsNewCardPresent()) {
     goto FuncEnd;
@@ -63,7 +126,16 @@ void testRFID() {
     goto FuncEnd;
   } //PICC_ReadCardSerial()：是否成功讀取資料?
   Serial.println(F("**Card Detected:**"));
+  
+  Serial3.println(F("**Card Detected:**"));
+  Serial3.print(F("UID: "));
+  for (byte i = 0; i < mfrc522 -> uid.size; i++) {
+      Serial3.print(mfrc522 -> uid.uidByte[i], HEX);
+      Serial3.print(" ");
+  }
+  Serial3.println();
   mfrc522->PICC_DumpDetailsToSerial(&(mfrc522->uid)); //讀出 UID
+  //mfrc522->PICC_DumpDetailsToSerial3(&(mfrc522->uid)); //讀出 UID
   mfrc522->PICC_HaltA(); // 讓同一張卡片進入停止模式 (只顯示一次)
   mfrc522->PCD_StopCrypto1(); // 停止 Crypto1
   FuncEnd:; // goto 跳到這.
@@ -113,7 +185,17 @@ void MotorWriting(double vL, double vR) {
   analogWrite(MotorR_PWMR, vR);
 }
 
+int tracktime = 0;
 
+void initVar() {
+  lastsum = 0;
+  innode = 0;
+  turntime = 0;
+  dir = 3;
+  turning = 0;
+  stop = 0;
+  state = 0;
+}
 
 void Tracking() {
   if (stop) {
@@ -121,12 +203,22 @@ void Tracking() {
     return;
   }
   int IR[5];
+  tracktime++;
   for (int i = 0 ; i < analognum ; i++) {
     int sensorValue = analogRead(analogPin[i]); // 宣告 sensorValue 這變數是整數(Integer)
     IR[i] = sensorValue;
+    if (tracktime >= 10) {
+      Serial3.print(IR[i]);
+      Serial3.print(" ");
+    }
+    
     if (IR[i] > 100) IR[i] = 1;
     else IR[i] = 0;
     //Serial.println(IR[i]); // 將數值印出來
+  }
+  if (tracktime >= 500/delaytime) {
+    Serial3.println();
+    tracktime = 0;
   }
   if (turning) {
     double turnspeed = 50;
@@ -140,12 +232,12 @@ void Tracking() {
       turning = 0;
       innode = 0;
     }
-    if ((dir == 0 || dir == 1) && (turntime > 600 && IR[2] == 1) ) {
+    if ((dir == 0 || dir == 1) && (turntime > 300 && (IR[2] == 1 || IR[1] == 1 || IR[3] == 1) ) ) {
       //MotorWriting(0, 0);
       turning = 0;
       innode = 0;
     }
-    if ((dir == 3) && (turntime > 1000 && IR[2] == 1) ) {
+    if ((dir == 3) && (turntime > 600 && (IR[2] == 1 || IR[1] == 1 || IR[3] == 1)) ) {
       //MotorWriting(0, 0);
       turning = 0;
       innode = 0;
@@ -170,6 +262,7 @@ void Tracking() {
       turning = 1;
       turntime = 0;
       dir = mode[state++];
+      state %= 8;
       if (dir == -1) stop = 1;
     }
     
@@ -182,23 +275,51 @@ void Tracking() {
 }
 
 void setup() {
-  Serial.begin(9600); // 表示開始傳遞與接收序列埠資料
+
+  initVar();
+  //Serial.begin(9600); // 表示開始傳遞與接收序列埠資料
   initIR();
-  //initRFID();
+  initRFID();
   initMotor();
+  //Serial.begin(9600);
+  initBlueTooth();
 }
 
 void loop(){
+  //testIR();
   Tracking();
+  testRFID();
   delay(delaytime);
-  /*MotorWriting(210, 200);
-  delay(5000);
-  MotorWriting(210, -200);
-  delay(2000);
-  MotorWriting(-210, -200);
-  delay(5000);*/
+
+  if (Serial3.available()) {
+    String command = Serial3.readString();
+    Serial.println(command);
+    if(command == "e") stop = 1;
+    else if (command == "s") {
+      initVar();
+    }
+  }
+  
 
   //testIR();
-  //testRFID();
   //testMotor();
+}
+
+void sendATCommand(const char* command) {
+  Serial3.print(command);
+  waitForResponse("", 1000); 
+}
+
+/**
+ * Helper to check response for specific substrings
+ */
+bool waitForResponse(const char* expected, unsigned long timeout) {
+  unsigned long start = millis();
+  Serial3.setTimeout(timeout);
+  String response = Serial3.readString();
+  if (response.length() > 0) {
+    Serial.print("HM10 Response: ");
+    Serial.println(response);
+  }
+  return (response.indexOf(expected) != -1);
 }
