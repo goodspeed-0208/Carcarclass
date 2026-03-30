@@ -20,7 +20,10 @@ int MotorR_I3 = BIN1, MotorR_I4 = BIN2, MotorL_I1 = AIN1, MotorL_I2 = AIN2;
 int MotorL_PWML = PWMA, MotorR_PWMR = PWMB;
 int lastsum = 0;
 bool innode = 0;
-int delaytime = 20;
+const int TARGET_FPS = 50;
+int targetLoopTime = 1000/TARGET_FPS;
+unsigned long lastLoopstartTime = 0;
+unsigned long nextLoopTime = 0;
 int turntime = 0;
 int dir;
 bool turning = 0;
@@ -39,11 +42,15 @@ void initIR() {
 
 int* testIR() {
   int r[5];
+  String msg = "";
   for (int i = 0 ; i < analognum ; i++) {
     int sensorValue = analogRead(analogPin[i]); // 宣告 sensorValue 這變數是整數(Integer)
     r[i] = sensorValue;
     Serial.println(sensorValue); // 將數值印出來
+    msg = msg + r[i] + " ";
   }
+  Serial3.println(msg);
+  //Serial3.println(r[0] + " " + r[1] + " " + r[2] + " " + r[3] + " " + r[4]);
   Serial.println("__________________");
   delay (500); // 延遲 2 秒
   return r;
@@ -160,8 +167,8 @@ void initMotor() {
 }*/
 
 void MotorWriting(double vL, double vR) {
-  if (vL > 0) vL += 10;
-  else if (vL < 0) vL -= 10;
+  if (vL > 0) vL += 5;
+  else if (vL < 0) vL -= 5;
   if (vL > 255) vL = 255;
   if (vR >= 0) {
     digitalWrite(MotorR_I3, LOW);
@@ -197,13 +204,13 @@ void initVar() {
   state = 0;
 }
 
-void Tracking() {
+void Tracking(int deltaTime) {
   if (stop) {
     MotorWriting(0, 0);
     return;
   }
   int IR[5];
-  tracktime++;
+  //tracktime++;
   for (int i = 0 ; i < analognum ; i++) {
     int sensorValue = analogRead(analogPin[i]); // 宣告 sensorValue 這變數是整數(Integer)
     IR[i] = sensorValue;
@@ -212,14 +219,14 @@ void Tracking() {
       Serial3.print(" ");
     }
     
-    if (IR[i] > 100) IR[i] = 1;
+    if (IR[i] > 40) IR[i] = 1;
     else IR[i] = 0;
     //Serial.println(IR[i]); // 將數值印出來
   }
-  if (tracktime >= 500/delaytime) {
+  /*if (tracktime >= 500/delaytime) {
     Serial3.println();
     tracktime = 0;
-  }
+  }*/
   if (turning) {
     double turnspeed = 50;
     if (dir == 0)
@@ -227,7 +234,7 @@ void Tracking() {
     else if (dir == 1 || dir == 3)
       MotorWriting(turnspeed, -turnspeed);
       
-    turntime+=delaytime;
+    turntime += deltaTime;
     if (dir == 2 && IR[0] == 0 && IR[4] == 0) {
       turning = 0;
       innode = 0;
@@ -237,7 +244,7 @@ void Tracking() {
       turning = 0;
       innode = 0;
     }
-    if ((dir == 3) && (turntime > 600 && (IR[2] == 1 || IR[1] == 1 || IR[3] == 1)) ) {
+    if ((dir == 3) && (turntime > 500 && (IR[2] == 1 || IR[1] == 1 || IR[3] == 1)) ) {
       //MotorWriting(0, 0);
       turning = 0;
       innode = 0;
@@ -257,12 +264,15 @@ void Tracking() {
     if(vR<-255) vR = -255;
     if(vL<-255) vL = -255;
     int sum = IR[0] + IR[1] + IR[2] + IR[3] + IR[4];
-    if (sum >= 4) innode = 1;
+    if (sum >= 4) {
+      innode = 1;
+      //Serial3.print("in_node");
+    }
     if (innode && sum <= 2) {
       turning = 1;
       turntime = 0;
-      dir = mode[state++];
-      state %= 8;
+      dir = mode[state];
+      state = (state + 1) % 8;
       if (dir == -1) stop = 1;
     }
     
@@ -273,7 +283,7 @@ void Tracking() {
 
   
 }
-
+unsigned long sendTime;
 void setup() {
 
   initVar();
@@ -283,22 +293,46 @@ void setup() {
   initMotor();
   //Serial.begin(9600);
   initBlueTooth();
+  stop = 1;
 }
-
+bool test = 0;
 void loop(){
-  //testIR();
-  Tracking();
-  testRFID();
-  delay(delaytime);
+  if (millis() > 10000 && !test) {
+    test = 1;
+    sendTime = millis();
+    Serial3.println("finish init");
+    Serial.println("send msg");
+    Serial.println(sendTime);
+  }
+  unsigned long currentTime = millis();
+
+  if (currentTime >= nextLoopTime) {
+    int deltatime = currentTime - lastLoopstartTime;
+    lastLoopstartTime = currentTime;
+    
+    // 設定下一次執行目標時間
+    nextLoopTime = currentTime + targetLoopTime;
+
+    Tracking(deltatime);
+    testRFID();
+    //testIR();
+  }
+  //delay(20);
+    //delay(targetLoopTime);
 
   if (Serial3.available()) {
     String command = Serial3.readString();
     Serial.println(command);
-    if(command == "e") stop = 1;
-    else if (command == "s") {
+    if (command == "receive init") {
+      Serial.print(millis() - sendTime);
+      Serial3.print(millis() - sendTime);
+    }
+    if(command == "e") stop = 1; // end
+    else if (command == "s") { // start
       initVar();
     }
   }
+  
   
 
   //testIR();
