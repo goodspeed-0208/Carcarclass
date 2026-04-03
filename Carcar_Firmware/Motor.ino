@@ -8,11 +8,16 @@ void CarCar::initMotor() {
   pinMode(MotorR_I4, OUTPUT);
 }
 
-void CarCar::MotorWriting(double vL, double vR) {
+void CarCar::MotorWriting() {
+  int vL = motor_vL;
+  int vR = motor_vR;
+
   if (vL > 0) vL += 5;
   else if (vL < 0) vL -= 5;
-  if (vL > 255) vL = 255;
-  if (vL < -255) vL = -255;
+  if (vL >= 255) vL = 255;
+  if (vL <= -255) vL = -255;
+  if (vR >= 255) vR = 255;
+  if (vR <= -255) vR = -255;
 
   if (vR >= 0) {
     digitalWrite(MotorR_I3, LOW);

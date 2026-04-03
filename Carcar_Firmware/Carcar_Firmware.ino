@@ -30,48 +30,63 @@ class CarCar{
 
 		void begin();
 
-    void Tracking(int deltaTime);
-    void readIR();
-    void readRFID();
-
-    void stop(); //目前放在Tracking
+    void stop(); //目前放在Navigation.ino
     void restart();
+
+    void reading();
+    void navigating(int deltaTime);
+
+    enum Direction {
+      FORWARD = 0,
+      LEFT = 1,
+      RIGHT = 2,
+      BACKWARD = 3,
+      TURN_BACK = 4,
+      STAY_STOP = -1
+    };
 
   private:
 		void initIR();
 		void initRFID();
 		void initMotor();
-    void MotorWriting(double vL, double vR);
+    void readIR();
+    void readRFID();
+    void Tracking(int deltaTime);
+    void MotorWriting();
 
   private:
     int MotorR_I3 = BIN1, MotorR_I4 = BIN2, MotorL_I1 = AIN1, MotorL_I2 = AIN2;
     int MotorL_PWML = PWMA, MotorR_PWMR = PWMB;
 
+    //RFID
 		int RFID_SS_PIN = SS_PIN;
     int RFID_RST_PIN = RST_PIN;
     MFRC522 *mfrc522;
 
-
-    //Navigation(關注在前進左右倒退迴轉的模式)
-    bool running = 0;
-    bool isInode = 0;
-    bool turning = 0;
-    int turntime = 0;
-    int dir; // left right forward baackward
-    int mode[8] = { 1, 3, 2, 3, 0, 3, 2, 3 }; 
-    int modeState = 0;
-    
-    //Tracking(關注在前進(或後退)的循跡演算法)
-    
-
     //IR
     int IRvalue[analognum] = {0, 0, 0, 0, 0};
-    int lastIRsum = 0;
+    bool IRisBlack[analognum] = {0, 0, 0, 0, 0};
     int IRtracktime = 0;
 
-    // BLUE TOOTH(class CarCar裡不會有bluetooth，因為bluetooth是車車與電腦的溝通橋樑)
+    //Motor
+    int motor_vL = 0;
+    int motor_vR = 0;
 
+    //Navigation(關注在前進左右倒退迴轉的模式)(在Navigation.ino)
+    bool isRunning = 0;
+    bool isInnode = 0;
+    int forwardspeed = 100;
+    int turnspeed = 50;
+    bool turning = 0;
+    int turntime = 0;
+    Direction dir; // left right forward baackward
+    Direction mode[8] = { RIGHT, BACKWARD, FORWARD, BACKWARD, LEFT, BACKWARD, FORWARD, BACKWARD }; 
+    int modeState = 0;
     
+    //Tracking(關注在前進(或後退)的循跡演算法)(在Navigation.ino)
+    
+
+    //class CarCar裡不會有bluetooth，因為bluetooth是車車與電腦的溝通橋樑
 
 };
 
@@ -84,6 +99,7 @@ void setup() {
   //Serial.begin(9600);
   initBlueTooth();
 	mycar.begin();
+  Serial3.setTimeout(10); // Minimize timeout to prevent blocking if '\n' is missing
 }
 
 bool test = 0;
@@ -105,9 +121,8 @@ void loop() {
 		// 設定下一次執行目標時間
 		nextLoopTime = currentTime + targetLoopTime;
 
-		mycar.Tracking(deltatime);
-		mycar.readRFID();
-		//readIR();
+		mycar.reading();
+		mycar.navigating(deltatime);
   }
 
   if (Serial3.available()) {

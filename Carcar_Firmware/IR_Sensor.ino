@@ -10,9 +10,10 @@ void CarCar::readIR() {
     IRvalue[i] = sensorValue;
     Serial.println(sensorValue);  // 將數值印出來
     msg = msg + IRvalue[i] + " ";
+    if (IRvalue[i] >= 40) IRisBlack[i] = 1;
+		else IRisBlack[i] = 0;
   }
   Serial3.println(msg);
   //Serial3.println(r[0] + " " + r[1] + " " + r[2] + " " + r[3] + " " + r[4]);
   Serial.println("__________________");
-  delay(500);  // 延遲 2 秒
 }
