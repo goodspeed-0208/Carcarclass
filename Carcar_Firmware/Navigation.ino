@@ -1,37 +1,60 @@
 
 void CarCar::navigating(int deltaTime) {
-	int lastMotor_vL = motor_vL; //判斷要不要MotorWriting();
+	int lastMotor_vL = motor_vL;  //判斷要不要MotorWriting();
 	int lastMotor_vR = motor_vR;
 	if (!isRunning) {
 		motor_vL = 0, motor_vR = 0;
 	} else if (turning) {
 		if (dir == LEFT)
-			motor_vL = -turnspeed, motor_vR = turnspeed;
-		else if (dir == RIGHT || dir == TURN_BACK)
-			motor_vL = turnspeed, motor_vR = -turnspeed;
+			turnleft(deltaTime);
+		else if (dir == RIGHT)
+			turnright(deltaTime);
 		else if (dir == FORWARD)
-			motor_vL = forwardspeed, motor_vR = forwardspeed;
+			goForward(deltaTime);
+		else if (dir == TURN_BACK)
+			turnback(deltaTime);
 
-		turntime += deltaTime;
-		if (dir == FORWARD && IRisBlack[0] == 0 && IRisBlack[4] == 0) {
-			turning = 0;
-			isInnode = 0;
-		}
-		if ((dir == LEFT || dir == RIGHT) && (turntime > 300 && (IRisBlack[2] == 1 || IRisBlack[1] == 1 || IRisBlack[3] == 1))) {
-			//MotorWriting(0, 0);
-			turning = 0;
-			isInnode = 0;
-		}
-		if ((dir == TURN_BACK) && (turntime > 500 && (IRisBlack[2] == 1 || IRisBlack[1] == 1 || IRisBlack[3] == 1))) {
-			//MotorWriting(0, 0);
-			turning = 0;
-			isInnode = 0;
-		}
-	} else if (!turning){
+	} else if (!turning) {
 		Tracking(deltaTime);
 	}
-	if(lastMotor_vL != motor_vL || lastMotor_vR != motor_vR){ //判斷要不要MotorWriting();
+	if (lastMotor_vL != motor_vL || lastMotor_vR != motor_vR) {  //判斷要不要MotorWriting();
 		MotorWriting();
+	}
+}
+
+void CarCar::goForward(int deltaTime) {
+	motor_vL = forwardspeed, motor_vR = forwardspeed;
+	turntime += deltaTime;
+	if (IRisBlack[0] == 0 && IRisBlack[4] == 0) {
+		turning = 0;
+		isInnode = 0;
+	}
+}
+
+void CarCar::turnleft(int deltaTime) {
+	motor_vL = -turnspeed, motor_vR = turnspeed;
+	turntime += deltaTime;
+	if (turntime >= Min_rightleft_turntime && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+		turning = 0;
+		isInnode = 0;
+	}
+}
+
+void CarCar::turnright(int deltaTime) {
+	motor_vL = turnspeed, motor_vR = -turnspeed;
+	turntime += deltaTime;
+	if (turntime >= Min_rightleft_turntime && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+		turning = 0;
+		isInnode = 0;
+	}
+}
+
+void CarCar::turnback(int deltaTime) {
+	motor_vL = turnspeed, motor_vR = -turnspeed;
+	turntime += deltaTime;
+	if (turntime >= Min_turnback_turntime && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+		turning = 0;
+		isInnode = 0;
 	}
 }
 
@@ -64,15 +87,15 @@ void CarCar::Tracking(int deltaTime) {
 	motor_vL = vL, motor_vR = vR;  //Feedback to CarCar
 }
 
-void CarCar::stop(){
+void CarCar::stop() {
 	isRunning = 0;
 }
 
-void CarCar::restart(){
-  isInnode = 0;
-  turntime = 0;
-  dir = mode[modeState];
-  turning = 0;
-  isRunning = 1;
-  modeState = 0;
+void CarCar::restart() {
+	isInnode = 0;
+	turntime = 0;
+	modeState = 0;
+	dir = mode[modeState];
+	turning = 0;
+	isRunning = 1;
 }

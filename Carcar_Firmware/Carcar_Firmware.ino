@@ -23,71 +23,78 @@ int targetLoopTime = 1000 / TARGET_FPS;
 unsigned long lastLoopstartTime = 0;
 unsigned long nextLoopTime = 0;
 
-class CarCar{
-  public:
-    CarCar();
-    ~CarCar();
+class CarCar {
+public:
+  CarCar();
+  ~CarCar();
 
-		void begin();
+  void begin();
 
-    void stop(); //目前放在Navigation.ino
-    void restart();
+  void stop();  //目前放在Navigation.ino
+  void restart();
 
-    void reading();
-    void navigating(int deltaTime);
+  void reading();
+  void navigating(int deltaTime);
 
-    enum Direction {
-      FORWARD = 0,
-      LEFT = 1,
-      RIGHT = 2,
-      BACKWARD = 3,
-      TURN_BACK = 4,
-      STAY_STOP = -1
-    };
+  enum Direction {
+    FORWARD = 0,
+    LEFT = 1,
+    RIGHT = 2,
+    BACKWARD = 3,
+    TURN_BACK = 4,
+    STAY_STOP = -1
+  };
 
-  private:
-		void initIR();
-		void initRFID();
-		void initMotor();
-    void readIR();
-    void readRFID();
-    void Tracking(int deltaTime);
-    void MotorWriting();
+private:
+  void initIR();
+  void initRFID();
+  void initMotor();
 
-  private:
-    int MotorR_I3 = BIN1, MotorR_I4 = BIN2, MotorL_I1 = AIN1, MotorL_I2 = AIN2;
-    int MotorL_PWML = PWMA, MotorR_PWMR = PWMB;
+  void readIR();
+  void readRFID();
 
-    //RFID
-		int RFID_SS_PIN = SS_PIN;
-    int RFID_RST_PIN = RST_PIN;
-    MFRC522 *mfrc522;
+  void goForward(int deltaTime);
+  void turnleft(int deltaTime);
+  void turnright(int deltaTime);
+  void turnback(int deltaTime);
+  void Tracking(int deltaTime);
+  void MotorWriting();
 
-    //IR
-    int IRvalue[analognum] = {0, 0, 0, 0, 0};
-    bool IRisBlack[analognum] = {0, 0, 0, 0, 0};
-    int IRtracktime = 0;
+private:
+  int MotorR_I3 = BIN1, MotorR_I4 = BIN2, MotorL_I1 = AIN1, MotorL_I2 = AIN2;
+  int MotorL_PWML = PWMA, MotorR_PWMR = PWMB;
 
-    //Motor
-    int motor_vL = 0;
-    int motor_vR = 0;
+  //RFID
+  int RFID_SS_PIN = SS_PIN;
+  int RFID_RST_PIN = RST_PIN;
+  MFRC522 *mfrc522;
 
-    //Navigation(關注在前進左右倒退迴轉的模式)(在Navigation.ino)
-    bool isRunning = 0;
-    bool isInnode = 0;
-    int forwardspeed = 100;
-    int turnspeed = 50;
-    bool turning = 0;
-    int turntime = 0;
-    Direction dir; // left right forward baackward
-    Direction mode[8] = { RIGHT, BACKWARD, FORWARD, BACKWARD, LEFT, BACKWARD, FORWARD, BACKWARD }; 
-    int modeState = 0;
-    
-    //Tracking(關注在前進(或後退)的循跡演算法)(在Navigation.ino)
-    
+  //IR
+  int IRvalue[analognum] = { 0, 0, 0, 0, 0 };
+  bool IRisBlack[analognum] = { 0, 0, 0, 0, 0 };
+  int IRtracktime = 0;
 
-    //class CarCar裡不會有bluetooth，因為bluetooth是車車與電腦的溝通橋樑
+  //Motor
+  int motor_vL = 0;
+  int motor_vR = 0;
 
+  //Navigation(關注在前進左右倒退迴轉的模式)(在Navigation.ino)
+  bool isRunning = 0;
+  bool isInnode = 0;
+  int forwardspeed = 100;
+  int turnspeed = 50;
+  bool turning = 0;
+  int turntime = 0;
+  int Min_rightleft_turntime = 300;
+  int Min_turnback_turntime = 500;
+  Direction dir;  // left right forward baackward
+  Direction mode[8] = { RIGHT, TURN_BACK, FORWARD, TURN_BACK, LEFT, TURN_BACK, FORWARD, TURN_BACK };
+  int modeState = 0;
+
+  //Tracking(關注在前進(或後退)的循跡演算法)(在Navigation.ino)
+
+
+  //class CarCar裡不會有bluetooth，因為bluetooth是車車與電腦的溝通橋樑
 };
 
 CarCar mycar;
@@ -98,44 +105,44 @@ void setup() {
   //Serial.begin(9600); // 表示開始傳遞與接收序列埠資料
   //Serial.begin(9600);
   initBlueTooth();
-	mycar.begin();
-  Serial3.setTimeout(10); // Minimize timeout to prevent blocking if '\n' is missing
+  mycar.begin();
+  Serial3.setTimeout(10);  // Minimize timeout to prevent blocking if '\n' is missing
 }
 
 bool test = 0;
 void loop() {
   if (millis() > 10000 && !test) {
-		test = 1;
-		sendTime = millis();
-		Serial3.println("finish init");
-		Serial.println("send msg");
-		Serial.println(sendTime);
+    test = 1;
+    sendTime = millis();
+    Serial3.println("finish init");
+    Serial.println("send msg");
+    Serial.println(sendTime);
   }
 
   unsigned long currentTime = millis();
 
   if (currentTime >= nextLoopTime) {
-		unsigned long deltatime = currentTime - lastLoopstartTime;
-		lastLoopstartTime = currentTime;
+    unsigned long deltatime = currentTime - lastLoopstartTime;
+    lastLoopstartTime = currentTime;
 
-		// 設定下一次執行目標時間
-		nextLoopTime = currentTime + targetLoopTime;
+    // 設定下一次執行目標時間
+    nextLoopTime = currentTime + targetLoopTime;
 
-		mycar.reading();
-		mycar.navigating(deltatime);
+    mycar.reading();
+    mycar.navigating(deltatime);
   }
 
   if (Serial3.available()) {
-		String command = Serial3.readStringUntil('\n'); //此處原本為String command = Serial3.readString();
+    String command = Serial3.readStringUntil('\n');  //此處原本為String command = Serial3.readString();
     command.trim();
-		Serial.println(command);
-		if (command == "receive init") {
-			Serial.print(millis() - sendTime);
-			Serial3.print(millis() - sendTime);
-		}
-		if (command == "e") mycar.stop();  // end
-		else if (command == "s") {     // start
-			mycar.restart();
-		}
+    Serial.println(command);
+    if (command == "receive init") {
+      Serial.print(millis() - sendTime);
+      Serial3.print(millis() - sendTime);
+    }
+    if (command == "e") mycar.stop();  // end
+    else if (command == "s") {         // start
+      mycar.restart();
+    }
   }
 }

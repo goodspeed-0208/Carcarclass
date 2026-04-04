@@ -1,10 +1,8 @@
 
-CarCar::CarCar(){
-  
+CarCar::CarCar() {
 }
 
-CarCar::~CarCar(){
-
+CarCar::~CarCar() {
 }
 
 void CarCar::begin() {
@@ -13,15 +11,13 @@ void CarCar::begin() {
   initRFID();
   isInnode = 0;
   turntime = 0;
-  dir = 3;
+  modeState = 0;
+  dir = mode[modeState];
   turning = 0;
   isRunning = 0;
-
-  modeState = 0; 
 }
 
-void CarCar::reading(){
+void CarCar::reading() {
   readRFID();
   readIR();
 }
-
