@@ -115,3 +115,24 @@ void CarCar::restart() {
 	turning = 0;
 	isRunning = 1;
 }
+
+void CarCar::adjust_motor_error() { //根據目前的速度與差值走直線，不做tracking
+	int lastMotor_vL = motor_vL;  //判斷要不要MotorWriting();
+	int lastMotor_vR = motor_vR;
+	if(!isRunning) {
+		motor_vL = 0;
+		motor_vR = 0;
+	}
+	else{
+		motor_vL = forwardspeed;
+		motor_vR = forwardspeed;
+	}
+
+	if(IRsum>=4) {
+		isRunning = 0;
+	}
+	
+	if (lastMotor_vL != motor_vL || lastMotor_vR != motor_vR) {  //判斷要不要MotorWriting();
+		MotorWriting();
+	}
+}

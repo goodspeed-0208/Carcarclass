@@ -35,6 +35,7 @@ public:
 
   void reading();
   void navigating(int deltaTime);
+  void adjust_motor_error();
 
   enum Direction {
     FORWARD = 0,
@@ -44,6 +45,14 @@ public:
     TURN_BACK = 4,
     STAY_STOP = -1
   };
+
+  int forwardspeed = 100;
+  int backwardspeed = 100;
+  int turnBackSpeed = 50;
+  int turnOuterSpeed = 100;
+  int turnInnerSpeed = 25;
+
+  int motor_error = 2;
 
 private:
   void initIR();
@@ -80,14 +89,10 @@ private:
   int motor_vL = 0;
   int motor_vR = 0;
 
+
   //Navigation(關注在前進左右倒退迴轉的模式)(在Navigation.ino)
   bool isRunning = 0;
   bool isInnode = 0;
-  int forwardspeed = 100;
-  int backwardspeed = 100;
-  int turnBackSpeed = 50;
-  int turnOuterSpeed = 100;
-  int turnInnerSpeed = 25;
   bool turning = 0;
   int turntime = 0;
   int Min_rightleft_turntime = 300;
@@ -135,7 +140,8 @@ void loop() {
     nextLoopTime = currentTime + targetLoopTime;
 
     mycar.reading();
-    mycar.navigating(deltatime);
+    //mycar.navigating(deltatime);
+    mycar.adjust_motor_error();
   }
 
   if (Serial3.available()) {
@@ -149,6 +155,27 @@ void loop() {
     if (command == "e") mycar.stop();  // end
     else if (command == "s") {         // start
       mycar.restart();
+    } else if (command.indexOf(' ') != -1) {
+      int spaceIndex = command.indexOf(' ');
+
+      // Extract and convert to integers
+      mycar.forwardspeed = command.substring(0, spaceIndex).toInt();
+      mycar.motor_error = command.substring(spaceIndex + 1).toInt();
+
+      // Call restart to set isRunning = 1 and reset parameters
+      mycar.restart();
+
+      // Print to USB Serial monitor for debugging
+      Serial.print("Calibration started. Speed: ");
+      Serial.print(mycar.forwardspeed);
+      Serial.print(" | Error: ");
+      Serial.println(mycar.motor_error);
+
+      // Send to Bluetooth terminal via Serial3
+      Serial3.print("Calibration started. Speed: ");
+      Serial3.print(mycar.forwardspeed);
+      Serial3.print(" | Error: ");
+      Serial3.println(mycar.motor_error);
     }
   }
 }
