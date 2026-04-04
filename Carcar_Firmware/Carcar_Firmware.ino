@@ -73,6 +73,7 @@ private:
   //IR
   int IRvalue[analognum] = { 0, 0, 0, 0, 0 };
   bool IRisBlack[analognum] = { 0, 0, 0, 0, 0 };
+  int IRsum = 0;
   int IRtracktime = 0;
 
   //Motor
@@ -84,7 +85,9 @@ private:
   bool isInnode = 0;
   int forwardspeed = 100;
   int backwardspeed = 100;
-  int turnspeed = 50;
+  int turnBackSpeed = 50;
+  int turnOuterSpeed = 100;
+  int turnInnerSpeed = 25;
   bool turning = 0;
   int turntime = 0;
   int Min_rightleft_turntime = 300;

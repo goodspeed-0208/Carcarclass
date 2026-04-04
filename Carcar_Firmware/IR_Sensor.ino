@@ -5,6 +5,7 @@ void CarCar::initIR() {
 
 void CarCar::readIR() {
   String msg = "";
+  IRsum = 0;
   for (int i = 0; i < analognum; i++) {
     int sensorValue = analogRead(analogPin[i]);  // 宣告 sensorValue 這變數是整數(Integer)
     IRvalue[i] = sensorValue;
@@ -12,6 +13,7 @@ void CarCar::readIR() {
     msg = msg + IRvalue[i] + " ";
     if (IRvalue[i] >= 40) IRisBlack[i] = 1;
     else IRisBlack[i] = 0;
+    IRsum += IRisBlack[i];
   }
   Serial3.println(msg);
   //Serial3.println(r[0] + " " + r[1] + " " + r[2] + " " + r[3] + " " + r[4]);
