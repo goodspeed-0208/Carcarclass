@@ -5,14 +5,15 @@ void CarCar::navigating(int deltaTime) {
 	if (!isRunning) {
 		motor_vL = 0, motor_vR = 0;
 	} else if (turning) {
+		turntime += deltaTime;
 		if (dir == LEFT)
-			turnleft(deltaTime);
+			turnleft();
 		else if (dir == RIGHT)
-			turnright(deltaTime);
+			turnright();
 		else if (dir == FORWARD)
-			goForward(deltaTime);
+			goForward();
 		else if (dir == TURN_BACK)
-			turnback(deltaTime);
+			turnback();
 
 	} else if (!turning) {
 		Tracking(deltaTime);
@@ -22,39 +23,49 @@ void CarCar::navigating(int deltaTime) {
 	}
 }
 
-void CarCar::goForward(int deltaTime) {
+void CarCar::goForward() {
 	motor_vL = forwardspeed, motor_vR = forwardspeed;
-	turntime += deltaTime;
 	if (IRisBlack[0] == 0 && IRisBlack[4] == 0) {
 		turning = 0;
 		isInnode = 0;
+		modeState = (modeState + 1) % 8;
 	}
 }
 
-void CarCar::turnleft(int deltaTime) {
+void CarCar::turnleft() {
 	motor_vL = -turnspeed, motor_vR = turnspeed;
-	turntime += deltaTime;
 	if (turntime >= Min_rightleft_turntime && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
 		turning = 0;
 		isInnode = 0;
+		modeState = (modeState + 1) % 8;
 	}
 }
 
-void CarCar::turnright(int deltaTime) {
+void CarCar::turnright() {
 	motor_vL = turnspeed, motor_vR = -turnspeed;
-	turntime += deltaTime;
 	if (turntime >= Min_rightleft_turntime && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
 		turning = 0;
 		isInnode = 0;
+		modeState = (modeState + 1) % 8;
 	}
 }
 
-void CarCar::turnback(int deltaTime) {
+void CarCar::turnback() {
 	motor_vL = turnspeed, motor_vR = -turnspeed;
-	turntime += deltaTime;
 	if (turntime >= Min_turnback_turntime && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
 		turning = 0;
 		isInnode = 0;
+		modeState = (modeState + 1) % 8;
+	}
+}
+
+void CarCar::goBackward() { //turning持續到回到上一個節點，目前功能尚不齊全
+	motor_vL = -backwardspeed, motor_vR = -backwardspeed;
+	int sum = IRisBlack[0] + IRisBlack[1] + IRisBlack[2] + IRisBlack[3] + IRisBlack[4];
+	if (turntime >= Min_backward_turntime && sum >= 4) {
+		turning = 0;
+		isInnode = 1;
+		modeState = (modeState + 1) % 8;
 	}
 }
 
@@ -80,7 +91,6 @@ void CarCar::Tracking(int deltaTime) {
 		turning = 1;
 		turntime = 0;
 		dir = mode[modeState];
-		modeState = (modeState + 1) % 8;
 		if (dir == STAY_STOP) isRunning = 0;
 	}
 

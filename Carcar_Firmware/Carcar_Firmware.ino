@@ -53,10 +53,11 @@ private:
   void readIR();
   void readRFID();
 
-  void goForward(int deltaTime);
-  void turnleft(int deltaTime);
-  void turnright(int deltaTime);
-  void turnback(int deltaTime);
+  void goForward();
+  void turnleft();
+  void turnright();
+  void turnback();
+  void goBackward();
   void Tracking(int deltaTime);
   void MotorWriting();
 
@@ -82,11 +83,13 @@ private:
   bool isRunning = 0;
   bool isInnode = 0;
   int forwardspeed = 100;
+  int backwardspeed = 100;
   int turnspeed = 50;
   bool turning = 0;
   int turntime = 0;
   int Min_rightleft_turntime = 300;
   int Min_turnback_turntime = 500;
+  int Min_backward_turntime = 800;
   Direction dir;  // left right forward baackward
   Direction mode[8] = { RIGHT, TURN_BACK, FORWARD, TURN_BACK, LEFT, TURN_BACK, FORWARD, TURN_BACK };
   int modeState = 0;
