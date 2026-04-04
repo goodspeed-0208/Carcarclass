@@ -2,22 +2,26 @@
 void CarCar::navigating(int deltaTime) {
 	int lastMotor_vL = motor_vL;  //判斷要不要MotorWriting();
 	int lastMotor_vR = motor_vR;
+	
 	if (!isRunning) {
 		motor_vL = 0, motor_vR = 0;
-	} else if (turning) {
-		turntime += deltaTime;
-		if (dir == LEFT)
-			turnleft();
-		else if (dir == RIGHT)
-			turnright();
-		else if (dir == FORWARD)
-			goForward();
-		else if (dir == TURN_BACK)
-			turnback();
-
-	} else if (!turning) {
-		Tracking(deltaTime);
+	} else {
+		if (!turning) {
+			Tracking(deltaTime);
+		}
+		if (turning) {
+			turntime += deltaTime;
+			if (dir == LEFT) turnleft();
+			else if (dir == RIGHT) turnright();
+			else if (dir == FORWARD) goForward();
+			else if (dir == TURN_BACK) turnback();
+			else if (dir == BACKWARD) goBackward();
+			if (!turning) {
+        Tracking(0); // Pass 0 as deltaTime since time was consumed by turning
+      }
+		}
 	}
+	
 	if (lastMotor_vL != motor_vL || lastMotor_vR != motor_vR) {  //判斷要不要MotorWriting();
 		MotorWriting();
 	}
