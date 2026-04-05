@@ -9,13 +9,18 @@ void CarCar::readIR() {
   for (int i = 0; i < analognum; i++) {
     int sensorValue = analogRead(analogPin[i]);  // 宣告 sensorValue 這變數是整數(Integer)
     IRvalue[i] = sensorValue;
-    Serial.println(sensorValue);  // 將數值印出來
+    //Serial.println(sensorValue);  // 將數值印出來
     msg = msg + IRvalue[i] + " ";
-    if (IRvalue[i] >= 40) IRisBlack[i] = 1;
+    if (IRvalue[i] >= IRisBlackValue[i]) IRisBlack[i] = 1;
     else IRisBlack[i] = 0;
     IRsum += IRisBlack[i];
   }
-  Serial3.println(msg);
+  /*IRcurrenttime = millis();
+  if(IRcurrenttime >= IRnexttime) {
+    Serial3.println(msg);
+    IRnexttime += IRsendtime;
+  }*/
+  
   //Serial3.println(r[0] + " " + r[1] + " " + r[2] + " " + r[3] + " " + r[4]);
-  Serial.println("__________________");
+  //Serial.println("__________________");
 }

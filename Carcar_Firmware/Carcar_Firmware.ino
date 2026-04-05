@@ -46,13 +46,16 @@ public:
     STAY_STOP = -1
   };
 
-  int forwardspeed = 100;
-  int backwardspeed = 100;
-  int turnBackSpeed = 50;
-  int turnOuterSpeed = 100;
-  int turnInnerSpeed = 25;
+  int forwardspeed = 150;
+  int backwardspeed = forwardspeed;
+  int turnBackSpeed = forwardspeed/2;
+  int turnOuterSpeed = forwardspeed;
+  int turnInnerSpeed = forwardspeed/4;
 
-  int motor_error = 2;
+  int motor_error = 3;
+
+  // adjust
+  bool adjust_start = 0;
 
 private:
   void initIR();
@@ -82,6 +85,7 @@ private:
   //IR
   int IRvalue[analognum] = { 0, 0, 0, 0, 0 };
   bool IRisBlack[analognum] = { 0, 0, 0, 0, 0 };
+  int IRisBlackValue[analognum] = {35, 40, 35, 40, 40};
   int IRsum = 0;
   int IRtracktime = 0;
 
@@ -95,14 +99,18 @@ private:
   bool isInnode = 0;
   bool turning = 0;
   int turntime = 0;
-  int Min_rightleft_turntime = 300;
-  int Min_turnback_turntime = 500;
+  int Min_rightleft_turntime = 30000/forwardspeed;
+  int Min_turnback_turntime = 50000/forwardspeed;
   int Min_backward_turntime = 800;
   Direction dir;  // left right forward baackward
   Direction mode[8] = { RIGHT, TURN_BACK, FORWARD, TURN_BACK, LEFT, TURN_BACK, FORWARD, TURN_BACK };
   int modeState = 0;
 
   //Tracking(關注在前進(或後退)的循跡演算法)(在Navigation.ino)
+
+  //adjust
+  int start_time;
+
 
 
   //class CarCar裡不會有bluetooth，因為bluetooth是車車與電腦的溝通橋樑
@@ -111,24 +119,27 @@ private:
 CarCar mycar;
 
 unsigned long sendTime;
+unsigned long IRsendtime = 500;
+unsigned long IRcurrenttime = 0;
+unsigned long IRnexttime = 0;
 
 void setup() {
   //Serial.begin(9600); // 表示開始傳遞與接收序列埠資料
   //Serial.begin(9600);
   initBlueTooth();
   mycar.begin();
-  Serial3.setTimeout(10);  // Minimize timeout to prevent blocking if '\n' is missing
+  Serial3.setTimeout(80);  // Minimize timeout to prevent blocking if '\n' is missing
 }
 
 bool test = 0;
 void loop() {
-  if (millis() > 10000 && !test) {
+  /*if (millis() > 10000 && !test) {
     test = 1;
     sendTime = millis();
     Serial3.println("finish init");
     Serial.println("send msg");
     Serial.println(sendTime);
-  }
+  }*/
 
   unsigned long currentTime = millis();
 
@@ -156,6 +167,7 @@ void loop() {
     else if (command == "s") {         // start
       mycar.restart();
     } else if (command.indexOf(' ') != -1) {
+      mycar.adjust_start = 0;
       int spaceIndex = command.indexOf(' ');
 
       // Extract and convert to integers

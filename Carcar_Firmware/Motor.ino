@@ -12,10 +12,18 @@ void CarCar::MotorWriting() {
   int vL = motor_vL;
   int vR = motor_vR;
 
-  if (vL > 0) vL += motor_error;
+  double vL_error = abs(vL)*0.0302-0.202;
+  double vR_error = abs(vR)*0.0302-0.202;
+
+  if (vL > 0) vL += (int)(vL_error+0.5); //四捨五入
+  else if (vL < 0) vL -= (int)(vL_error+0.5);
+  if (vR > 0) vR -= (int)(vR_error+0.5);
+  else if (vR < 0) vR += (int)(vR_error+0.5);
+
+  /*if (vL > 0) vL += motor_error;
   else if (vL < 0) vL -= motor_error;
   if (vR > 0) vR -= motor_error;
-  else if (vR < 0) vR += motor_error;
+  else if (vR < 0) vR += motor_error;*/
   
   if (vL >= 255) vL = 255;
   if (vL <= -255) vL = -255;

@@ -74,14 +74,14 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 }
 
 void CarCar::Tracking(int deltaTime) {
-	double Kprate = 0.1, Tp = 100;
+	double Kprate = 0.1;
 	double w3 = 5, w2 = 3;
 	double error = 0;
 	if (IRisBlack[0] + IRisBlack[1] + IRisBlack[3] + IRisBlack[4] > 0)
 		error = (IRisBlack[0] * (-w3) + IRisBlack[1] * (-w2) + IRisBlack[3] * w2 + IRisBlack[4] * w3) / IRsum;
-	int powerCorrection = Kprate * Tp * error;  // ex. Kp = 100, 也與w2 & w3有關  //沒看懂等改
-	int vR = Tp - powerCorrection;              // ex. Tp = 150, 也與w2 & w3有關
-	int vL = Tp + powerCorrection;
+	int powerCorrection = Kprate * forwardspeed * error;  // ex. Kp = 100, 也與w2 & w3有關  //沒看懂等改
+	int vR = forwardspeed - powerCorrection;              // ex. Tp = 150, 也與w2 & w3有關
+	int vL = forwardspeed + powerCorrection;
 	if (vR >= 255) vR = 255;
 	if (vL >= 255) vL = 255;
 	if (vR <= -255) vR = -255;
@@ -126,11 +126,21 @@ void CarCar::adjust_motor_error() { //根據目前的速度與差值走直線，
 	else{
 		motor_vL = forwardspeed;
 		motor_vR = forwardspeed;
+		if(IRsum>=4) {
+			int current_adjust_time = millis() - start_time;
+			if(!adjust_start){
+				start_time = millis();
+				adjust_start = 1;
+			}
+			else if(current_adjust_time >= 1500) {
+				isRunning = 0;
+				adjust_start = 0;
+				Serial3.println(current_adjust_time);
+			}
+			
+		}
 	}
 
-	if(IRsum>=4) {
-		isRunning = 0;
-	}
 	
 	if (lastMotor_vL != motor_vL || lastMotor_vR != motor_vR) {  //判斷要不要MotorWriting();
 		MotorWriting();
