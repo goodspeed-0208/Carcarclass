@@ -134,7 +134,12 @@ private:
   int modeState = 0;
 
   //Tracking(關注在前進(或後退)的循跡演算法)(在Navigation.ino)
-
+  // PID for tracking
+  double lastError = 0;
+  double integral = 0;
+  double Kp = 0.1;
+  double Ki = 0.0;
+  double Kd = 0.1;
   //adjust
   int start_time;
 
