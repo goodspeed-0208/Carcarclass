@@ -139,7 +139,7 @@ private:
   double integral = 0;
   double Kp = 0.1;
   double Ki = 0.0;
-  double Kd = 0.1;
+  double Kd = 0.03;
   //adjust
   int start_time;
 
