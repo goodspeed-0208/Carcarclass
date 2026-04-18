@@ -35,7 +35,7 @@ public:
 
   void reading();
   void navigating(int deltaTime);
-  void adjust_motor_error();
+  void adjust_motor_error(int deltaTime);
 
   enum Direction {
     FORWARD = 0,
@@ -43,6 +43,8 @@ public:
     RIGHT = 2,
     BACKWARD = 3,
     TURN_BACK = 4,
+    LEFT_AFTER_BACKWARD = 5,
+    RIGHT_AFTER_BACKWARD = 6,
     STAY_STOP = -1
   };
 
@@ -51,11 +53,32 @@ public:
   int turnBackSpeed = forwardspeed/2;
   int turnOuterSpeed = forwardspeed;
   int turnInnerSpeed = forwardspeed/4;
+  int turnOuterSpeed_back = forwardspeed;
+  int turnInnerSpeed_back = 0;
+  long sum_vL = 0;
+  long sum_vR = 0;
+  double averagevL = 0;
+  double averagevR = 0;
+  long trackCount = 0;
+
+  double maxAcceleration = 0.3;
 
   int motor_error = 3;
 
   // adjust
   bool adjust_start = 0;
+
+  // --- Turn Test Variables & Functions ---
+  enum TestState { TEST_WAIT, TEST_TRACK, TEST_TURN };
+  TestState testState = TEST_WAIT;
+  
+  char testDir = 'L';
+  int testOuterSpeed = 0;
+  int testInnerSpeed = 0;
+  unsigned long turnStartTime = 0;
+
+  void start_turn_test(char dir, int outer, float ratio);
+  void run_turn_test(int deltaTime);
 
 private:
   void initIR();
@@ -70,8 +93,10 @@ private:
   void turnright();
   void turnback();
   void goBackward();
+  void turnleft_after_backward();
+  void turnright_after_backward();
   void Tracking(int deltaTime);
-  void MotorWriting();
+  void MotorWriting(int deltaTime);
 
 private:
   int MotorR_I3 = BIN1, MotorR_I4 = BIN2, MotorL_I1 = AIN1, MotorL_I2 = AIN2;
@@ -90,8 +115,10 @@ private:
   int IRtracktime = 0;
 
   //Motor
-  int motor_vL = 0;
-  int motor_vR = 0;
+  int target_motor_vL = 0;
+  int target_motor_vR = 0;
+  int lastReal_motor_vL = 0;
+  int lastReal_motor_vR = 0;
 
 
   //Navigation(關注在前進左右倒退迴轉的模式)(在Navigation.ino)
@@ -157,7 +184,8 @@ void loop() {
 
     mycar.reading();
     //mycar.navigating(deltatime);
-    mycar.adjust_motor_error();
+    //mycar.adjust_motor_error(deltatime);
+    mycar.run_turn_test(deltatime);
 
     //檢查loop花費時間
     maxLoopDuration = max(maxLoopDuration, millis()-currentTime);

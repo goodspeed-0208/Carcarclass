@@ -1,10 +1,9 @@
 
 void CarCar::navigating(int deltaTime) {
-	int lastMotor_vL = motor_vL;  //判斷要不要MotorWriting();
-	int lastMotor_vR = motor_vR;
 
 	if (!isRunning) {
-		motor_vL = 0, motor_vR = 0;
+		target_motor_vL = 0;
+		target_motor_vR = 0;
 	} else {
 		if (!turning) {
 			Tracking(deltaTime);
@@ -16,21 +15,36 @@ void CarCar::navigating(int deltaTime) {
 			else if (dir == FORWARD) goForward();
 			else if (dir == TURN_BACK) turnback();
 			else if (dir == BACKWARD) goBackward();
+			else if (dir == LEFT_AFTER_BACKWARD) turnleft_after_backward();
+			else if (dir == RIGHT_AFTER_BACKWARD) turnright_after_backward();
 			turntime += deltaTime;
 			if (!turning) {
 				Tracking(0);  // Pass 0 as deltaTime since time was consumed by turning
 			}
 		}
+
+		if(!turning || (turning && dir == FORWARD)){
+			trackCount++;
+			sum_vL += target_motor_vL;
+			sum_vR += target_motor_vR;
+			averagevL = sum_vL/trackCount;
+			averagevR = sum_vR/trackCount;
+		}
+		else if(turning && dir != BACKWARD){
+			sum_vL = 0;
+    	sum_vR = 0;
+    	trackCount = 0;
+		}
 	}
 
-	if (lastMotor_vL != motor_vL || lastMotor_vR != motor_vR) {  //判斷要不要MotorWriting();
-		MotorWriting();
-	}
+
+
+	MotorWriting(deltaTime);
 }
 
 void CarCar::goForward() {
-	motor_vL = forwardspeed, motor_vR = forwardspeed;
-	if (IRisBlack[0] == 0 && IRisBlack[4] == 0) {
+	target_motor_vL = forwardspeed, target_motor_vR = forwardspeed;
+	if (IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
@@ -38,8 +52,8 @@ void CarCar::goForward() {
 }
 
 void CarCar::turnleft() {
-	motor_vL = turnInnerSpeed, motor_vR = turnOuterSpeed;
-	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0) {
+	target_motor_vL = turnInnerSpeed, target_motor_vR = turnOuterSpeed;
+	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
@@ -47,8 +61,8 @@ void CarCar::turnleft() {
 }
 
 void CarCar::turnright() {
-	motor_vL = turnOuterSpeed, motor_vR = turnInnerSpeed;
-	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0) {
+	target_motor_vL = turnOuterSpeed, target_motor_vR = turnInnerSpeed;
+	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
@@ -56,8 +70,8 @@ void CarCar::turnright() {
 }
 
 void CarCar::turnback() {
-	motor_vL = turnBackSpeed, motor_vR = -turnBackSpeed;
-	if (turntime >= Min_turnback_turntime && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+	target_motor_vL = turnBackSpeed, target_motor_vR = -turnBackSpeed;
+	if (turntime >= Min_turnback_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
@@ -65,10 +79,31 @@ void CarCar::turnback() {
 }
 
 void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功能尚不齊全
-	motor_vL = -backwardspeed, motor_vR = -backwardspeed;
+	target_motor_vL = -averagevL, target_motor_vR = -averagevR;
 	if (turntime >= Min_backward_turntime && IRsum >= 4) {
 		turning = 0;
 		isInnode = 1;
+		modeState = (modeState + 1) % 8;
+		sum_vL = 0;
+    sum_vR = 0;
+    trackCount = 0;
+	}
+}
+
+void CarCar::turnleft_after_backward() {
+	target_motor_vL = turnInnerSpeed_back, target_motor_vR = turnOuterSpeed_back;
+	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+		turning = 0;
+		isInnode = 0;
+		modeState = (modeState + 1) % 8;
+	}
+}
+
+void CarCar::turnright_after_backward() {
+	target_motor_vL = turnOuterSpeed_back, target_motor_vR = turnInnerSpeed_back;
+	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+		turning = 0;
+		isInnode = 0;
 		modeState = (modeState + 1) % 8;
 	}
 }
@@ -100,7 +135,7 @@ void CarCar::Tracking(int deltaTime) {
 		if (dir == STAY_STOP) isRunning = 0;
 	}*/
 
-	motor_vL = vL, motor_vR = vR;  //Feedback to CarCar
+	target_motor_vL = vL, target_motor_vR = vR;  //Feedback to CarCar
 }
 
 void CarCar::stop() {
@@ -116,16 +151,14 @@ void CarCar::restart() {
 	isRunning = 1;
 }
 
-void CarCar::adjust_motor_error() { //根據目前的速度與差值走直線，不做tracking
-	int lastMotor_vL = motor_vL;  //判斷要不要MotorWriting();
-	int lastMotor_vR = motor_vR;
+void CarCar::adjust_motor_error(int deltatime) { //根據目前的速度與差值走直線，不做tracking
 	if(!isRunning) {
-		motor_vL = 0;
-		motor_vR = 0;
+		target_motor_vL = 0;
+		target_motor_vR = 0;
 	}
 	else{
-		motor_vL = forwardspeed;
-		motor_vR = forwardspeed;
+		target_motor_vL = forwardspeed;
+		target_motor_vR = forwardspeed;
 		if(IRsum>=4) {
 			int current_adjust_time = millis() - start_time;
 			if(!adjust_start){
@@ -141,8 +174,72 @@ void CarCar::adjust_motor_error() { //根據目前的速度與差值走直線，
 		}
 	}
 
+		MotorWriting(deltatime);
+}
+
+void CarCar::start_turn_test(char dir, int outer, float ratio) {
+	testDir = dir;
+	testOuterSpeed = outer;
+	testInnerSpeed = outer * ratio; // Calculate inner speed safely
+	testState = TEST_TRACK;         // Enter tracking state
+	isRunning = 1;
 	
-	if (lastMotor_vL != motor_vL || lastMotor_vR != motor_vR) {  //判斷要不要MotorWriting();
-		MotorWriting();
+	Serial.println("Test Started. Tracking to next node...");
+	Serial3.println("Test Started. Tracking to next node...");
+}
+
+void CarCar::run_turn_test(int deltaTime) {
+	if (!isRunning) {
+		target_motor_vL = 0;
+		target_motor_vR = 0;
+		MotorWriting(deltaTime);
+		return;
 	}
+
+	switch (testState) {
+		case TEST_WAIT:
+			target_motor_vL = 0;
+			target_motor_vR = 0;
+			break;
+
+		case TEST_TRACK:
+			// 1. Track the line to ensure perfect alignment before the turn
+			Tracking(deltaTime); 
+			
+			// 2. Check if we hit the node
+			if (IRsum >= 4) {    
+				testState = TEST_TURN;
+				turnStartTime = millis();
+				Serial3.println("Node detected! Starting turn...");
+			}
+			break;
+
+		case TEST_TURN:
+			// 1. Set turning speeds
+			if (testDir == 'L') {
+				target_motor_vL = testInnerSpeed;
+				target_motor_vR = testOuterSpeed;
+			} else if (testDir == 'R') {
+				target_motor_vL = testOuterSpeed;
+				target_motor_vR = testInnerSpeed;
+			}
+
+			int currentTurnTime = millis() - turnStartTime;
+			int deadzoneTime = 30000/testOuterSpeed; // Blind turning time to escape the node (adjust if needed)
+
+			// 2. Exit condition: Passed deadzone AND center IR sees the line
+			if (currentTurnTime > deadzoneTime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+				testState = TEST_WAIT;
+				isRunning = 0; // Emergency stop!
+				target_motor_vL = 0;
+				target_motor_vR = 0;
+
+				Serial3.print("Turn Finished! Time taken (ms): ");
+				Serial3.println(currentTurnTime);
+			}
+			break;
+	}
+
+	// Always execute motor writing to maintain Slew Rate Limiting
+	MotorWriting(deltaTime);
 }

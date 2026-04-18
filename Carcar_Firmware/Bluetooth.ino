@@ -110,6 +110,24 @@ void processBluetoothCommand(String command) {
   command.trim();
   Serial.println(command);
 
+  if (command.startsWith("L ") || command.startsWith("R ")) {
+    char dir = command.charAt(0);
+    int firstSpace = command.indexOf(' ');
+    int secondSpace = command.indexOf(' ', firstSpace + 1);
+
+    if (firstSpace != -1 && secondSpace != -1) {
+      int outer = command.substring(firstSpace + 1, secondSpace).toInt();
+      float ratio = command.substring(secondSpace + 1).toFloat();
+      
+      Serial.print("Command received -> Dir: "); Serial.print(dir);
+      Serial.print(" | Outer: "); Serial.print(outer);
+      Serial.print(" | Ratio: "); Serial.println(ratio);
+      
+      mycar.start_turn_test(dir, outer, ratio);
+    }
+    return; // Exit here so it doesn't trigger other commands
+  }
+
   if (command == "receive init") {
     // sendTime is a global variable in the main tab
     Serial.print(millis() - sendTime);
