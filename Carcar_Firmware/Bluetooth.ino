@@ -67,11 +67,81 @@ void sendATCommand(const char* command) {
  */
 bool waitForResponse(const char* expected, unsigned long timeout) {
   unsigned long start = millis();
-  Serial3.setTimeout(timeout);
-  String response = Serial3.readString();
-  if (response.length() > 0) {
-    Serial.print("HM10 Response: ");
-    Serial.println(response);
+  String response = "";
+
+  // Keep checking until the timeout is reached
+  while (millis() - start < timeout) {
+    // Read available characters from the serial buffer immediately
+    while (Serial3.available()) {
+      char c = Serial3.read();
+      response += c;
+    }
+
+    // If we are looking for a specific string (like "OK")
+    if (strlen(expected) > 0) {
+      // Check if the expected string is already inside the response
+      if (response.indexOf(expected) != -1) {
+        Serial.print("HM10 Response: ");
+        Serial.println(response);
+        return true; // Early exit! Saves massive amount of time.
+      }
+    }
+    
+    // Small delay to prevent tight loop from blocking the CPU completely
+    delay(1); 
   }
-  return (response.indexOf(expected) != -1);
+
+  // If we reach here, it means we waited the full timeout
+  if (response.length() > 0) {
+    Serial.print("HM10 Response (Timeout or finished): ");
+    Serial.println(response);
+    
+    // Final check just in case the string arrived at the very last millisecond
+    if (strlen(expected) > 0) {
+        return (response.indexOf(expected) != -1);
+    }
+  }
+  
+  // If expected was "" (empty), return true since we successfully waited
+  return (strlen(expected) == 0); 
+}
+
+void processBluetoothCommand(String command) {
+  command.trim();
+  Serial.println(command);
+
+  if (command == "receive init") {
+    // sendTime is a global variable in the main tab
+    Serial.print(millis() - sendTime);
+    Serial3.print(millis() - sendTime);
+  }
+  else if (command == "e") {
+    mycar.stop();
+  }
+  else if (command == "s") {
+    mycar.restart();
+  }
+  else if (command.indexOf(' ') != -1) {
+    mycar.adjust_start = 0;
+    int spaceIndex = command.indexOf(' ');
+
+    // Extract and convert to integers
+    mycar.forwardspeed = command.substring(0, spaceIndex).toInt();
+    mycar.motor_error = command.substring(spaceIndex + 1).toInt();
+
+    // Call restart to set isRunning = 1 and reset parameters
+    mycar.restart();
+
+    // Print to USB Serial monitor for debugging
+    Serial.print("Calibration started. Speed: ");
+    Serial.print(mycar.forwardspeed);
+    Serial.print(" | Error: ");
+    Serial.println(mycar.motor_error);
+
+    // Send to Bluetooth terminal via Serial3
+    Serial3.print("Calibration started. Speed: ");
+    Serial3.print(mycar.forwardspeed);
+    Serial3.print(" | Error: ");
+    Serial3.println(mycar.motor_error);
+  }
 }

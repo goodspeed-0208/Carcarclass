@@ -132,6 +132,11 @@ void setup() {
 }
 
 bool test = 0;
+unsigned long maxLoopDuration = 0;
+
+unsigned long nextSendTime = 0;
+unsigned long deltaSendTime = 1000;
+
 void loop() {
   /*if (millis() > 10000 && !test) {
     test = 1;
@@ -148,46 +153,26 @@ void loop() {
     lastLoopstartTime = currentTime;
 
     // 設定下一次執行目標時間
-    nextLoopTime = currentTime + targetLoopTime;
+    nextLoopTime +=  targetLoopTime;
 
     mycar.reading();
     //mycar.navigating(deltatime);
     mycar.adjust_motor_error();
+
+    //檢查loop花費時間
+    maxLoopDuration = max(maxLoopDuration, millis()-currentTime);
+  }
+
+  if(currentTime >= nextSendTime){
+      nextSendTime += deltaSendTime;
+
+      Serial3.print("max loop duration: ");
+      Serial3.println(maxLoopDuration);
+      maxLoopDuration = 0;
   }
 
   if (Serial3.available()) {
-    String command = Serial3.readStringUntil('\n');  //此處原本為String command = Serial3.readString();
-    command.trim();
-    Serial.println(command);
-    if (command == "receive init") {
-      Serial.print(millis() - sendTime);
-      Serial3.print(millis() - sendTime);
-    }
-    if (command == "e") mycar.stop();  // end
-    else if (command == "s") {         // start
-      mycar.restart();
-    } else if (command.indexOf(' ') != -1) {
-      mycar.adjust_start = 0;
-      int spaceIndex = command.indexOf(' ');
-
-      // Extract and convert to integers
-      mycar.forwardspeed = command.substring(0, spaceIndex).toInt();
-      mycar.motor_error = command.substring(spaceIndex + 1).toInt();
-
-      // Call restart to set isRunning = 1 and reset parameters
-      mycar.restart();
-
-      // Print to USB Serial monitor for debugging
-      Serial.print("Calibration started. Speed: ");
-      Serial.print(mycar.forwardspeed);
-      Serial.print(" | Error: ");
-      Serial.println(mycar.motor_error);
-
-      // Send to Bluetooth terminal via Serial3
-      Serial3.print("Calibration started. Speed: ");
-      Serial3.print(mycar.forwardspeed);
-      Serial3.print(" | Error: ");
-      Serial3.println(mycar.motor_error);
-    }
+    String cmd = Serial3.readStringUntil('\n');
+    processBluetoothCommand(cmd);
   }
 }
