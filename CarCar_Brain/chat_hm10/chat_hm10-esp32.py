@@ -1,4 +1,6 @@
 from hm10_esp32 import HM10ESP32Bridge
+from bfs_tool import mybfs
+import pandas
 import time
 import sys
 import threading
@@ -6,15 +8,37 @@ import threading
 PORT = 'COM7'
 EXPECTED_NAME = 'HM10_12'
 
+raw_data = pandas.read_csv('maze.csv').values
+
+adj = mybfs.build_adjacency_list(raw_data)
+
+row = 3, column = 4
+start = 2
+end = 12
+curpos = start
+curdir = ""
+lastcommand = "f"
+
 def background_listener(bridge):
     while True:
         msg = bridge.listen()
         if msg:
+            """
             if (msg == "finish init") :
                 print("send")
                 bridge.send("receive init")
             print(f"\r[HM10]: {msg}")
             print("You: ", end="", flush=True)
+            """
+            if (msg == "innode") :
+                directions = mybfs.bfs_directions(adj, curpos, end)
+                command = mybfs.convert_to_commands([curdir]+directions)
+                print("send: " + command[1])
+                bridge.send(command[1])
+                curpos = mybfs.move(curpos, directions[0])
+                curdir = directions[0]
+
+
         time.sleep(0.02)
 
 def main():
@@ -42,10 +66,19 @@ def main():
         sys.exit(0)
 
     print(f"✨ Ready! Connected to {EXPECTED_NAME}")
+
+    curdir = mybfs.bfs_directions(adj, curpos, end)
+    curpos = mybfs.move(curpos, curdir)
+
     threading.Thread(target=background_listener, args=(bridge,), daemon=True).start()
 
     try:
         while True:
+            
+
+
+
+
             user_msg = input("You: ")
             if user_msg.lower() in ['exit', 'quit']: break
             if user_msg: bridge.send(user_msg)
