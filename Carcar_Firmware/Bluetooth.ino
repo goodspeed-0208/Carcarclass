@@ -128,6 +128,34 @@ void processBluetoothCommand(String command) {
     return; // Exit here so it doesn't trigger other commands
   }
 
+  /*if(command.startsWith("Dir:")){
+    int space = command.indexOf(':');
+    String s_dir = command.substring(space + 1);
+    switch(s_dir){
+      case "f":
+        mycar.next_dir = FORWARD;
+        break;
+      case "l":
+        mycar.next_dir = LEFT;
+        break;
+      case "r":
+        mycar.next_dir = RIGHT;
+        break;
+      case "t":
+        mycar.next_dir = TURN_BACK;
+        break;
+      case "b":
+        mycar.next_dir = BACKWARD;
+        break;
+      case "lb":
+        mycar.next_dir = LEFT_AFTER_BACKWARD;
+        break;
+      case "rb":
+        mycar.next_dir = RIGHT_AFTER_BACKWARD;
+        break;
+    }
+  }*/
+
   if (command == "receive init") {
     // sendTime is a global variable in the main tab
     Serial.print(millis() - sendTime);

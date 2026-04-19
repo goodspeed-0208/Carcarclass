@@ -18,7 +18,7 @@ const int BIN1 = 8;
 long baudRates[] = { 9600, 19200, 38400, 57600, 115200, 4800, 2400, 1200, 230400 };
 bool blueToothModuleReady = false;
 
-const int TARGET_FPS = 50;
+const int TARGET_FPS = 20;
 int targetLoopTime = 1000 / TARGET_FPS;
 unsigned long lastLoopstartTime = 0;
 unsigned long nextLoopTime = 0;
@@ -52,7 +52,7 @@ public:
   int backwardspeed = forwardspeed;
   int turnBackSpeed = forwardspeed/2;
   int turnOuterSpeed = forwardspeed;
-  int turnInnerSpeed = forwardspeed/4;
+  int turnInnerSpeed = forwardspeed*0.15;
   int turnOuterSpeed_back = forwardspeed;
   int turnInnerSpeed_back = 0;
   long sum_vL = 0;
@@ -61,7 +61,9 @@ public:
   double averagevR = 0;
   long trackCount = 0;
 
-  double maxAcceleration = 0.3;
+  Direction next_dir;
+
+  double maxAcceleration = 1;
 
   int motor_error = 3;
 
@@ -126,11 +128,12 @@ private:
   bool isInnode = 0;
   bool turning = 0;
   int turntime = 0;
-  int Min_rightleft_turntime = 30000/forwardspeed;
-  int Min_turnback_turntime = 50000/forwardspeed;
+  int Min_rightleft_turntime = 60000/forwardspeed;
+  int Min_turnback_turntime = 80000/forwardspeed;
   int Min_backward_turntime = 800;
   Direction dir;  // left right forward baackward
   Direction mode[8] = { RIGHT, TURN_BACK, FORWARD, TURN_BACK, LEFT, TURN_BACK, FORWARD, TURN_BACK };
+  
   int modeState = 0;
 
   //Tracking(關注在前進(或後退)的循跡演算法)(在Navigation.ino)
@@ -196,13 +199,16 @@ void loop() {
     maxLoopDuration = max(maxLoopDuration, millis()-currentTime);
   }
 
-  if(currentTime >= nextSendTime){
+  /*if(currentTime >= nextSendTime){
       nextSendTime += deltaSendTime;
+
+      Serial.print("max loop duration: ");
+      Serial.println(maxLoopDuration);
 
       Serial3.print("max loop duration: ");
       Serial3.println(maxLoopDuration);
       maxLoopDuration = 0;
-  }
+  }*/
 
   if (Serial3.available()) {
     String cmd = Serial3.readStringUntil('\n');
