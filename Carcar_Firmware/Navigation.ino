@@ -23,10 +23,12 @@ void CarCar::navigating(int deltaTime) {
 			}
 		}
 
-		if(!turning || (turning && dir == FORWARD)){
+	MotorWriting(deltaTime);
+
+	if(!turning || (turning && dir == FORWARD)){ //紀錄直行平均速度
 			trackCount++;
-			sum_vL += target_motor_vL;
-			sum_vR += target_motor_vR;
+			sum_vL += last_motor_vL;
+			sum_vR += last_motor_vR;
 			averagevL = sum_vL/trackCount;
 			averagevR = sum_vR/trackCount;
 		}
@@ -36,10 +38,6 @@ void CarCar::navigating(int deltaTime) {
     	trackCount = 0;
 		}
 	}
-
-
-
-	MotorWriting(deltaTime);
 }
 
 void CarCar::goForward() {
@@ -48,6 +46,7 @@ void CarCar::goForward() {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
+		Serial3.println("outnode");
 	}
 }
 
@@ -57,6 +56,7 @@ void CarCar::turnleft() {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
+		Serial3.println("outnode");
 	}
 }
 
@@ -66,6 +66,7 @@ void CarCar::turnright() {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
+		Serial3.println("outnode");
 	}
 }
 
@@ -75,6 +76,7 @@ void CarCar::turnback() {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
+		Serial3.println("outnode");
 	}
 }
 
@@ -87,6 +89,7 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 		sum_vL = 0;
     sum_vR = 0;
     trackCount = 0;
+		Serial3.println("outnode");
 	}
 }
 
@@ -96,6 +99,7 @@ void CarCar::turnleft_after_backward() {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
+		Serial3.println("outnode");
 	}
 }
 
@@ -105,6 +109,7 @@ void CarCar::turnright_after_backward() {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
+		Serial3.println("outnode");
 	}
 }
 
@@ -129,10 +134,12 @@ void CarCar::Tracking(int deltaTime) {
 		isInnode = 1;
 		turning = 1;
 		turntime = 0;
-		dir = mode[modeState];
-		//Serial3.print("in_node");
 		integral = 0;
-        lastError = 0;
+    lastError = 0;
+
+		dir = next_dir;
+		Serial3.println("innode");
+
 	}
 	else {
         lastError = error;
@@ -146,6 +153,8 @@ void CarCar::Tracking(int deltaTime) {
 	}*/
 
 	target_motor_vL = vL, target_motor_vR = vR;  //Feedback to CarCar
+
+	//MotorWriting(deltaTime); //記得刪
 }
 
 void CarCar::stop() {
@@ -237,7 +246,7 @@ void CarCar::run_turn_test(int deltaTime) {
 			}
 
 			int currentTurnTime = millis() - turnStartTime;
-			int deadzoneTime = 30000/testOuterSpeed; // Blind turning time to escape the node (adjust if needed)
+			int deadzoneTime = 70000/testOuterSpeed; // Blind turning time to escape the node (adjust if needed)
 
 			// 2. Exit condition: Passed deadzone AND center IR sees the line
 			if (currentTurnTime > deadzoneTime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
