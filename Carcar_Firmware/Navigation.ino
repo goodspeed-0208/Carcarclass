@@ -114,12 +114,16 @@ void CarCar::turnright_after_backward() {
 }
 
 void CarCar::Tracking(int deltaTime) {
-	double Kprate = 0.1;
 	double w3 = 5, w2 = 3;
 	double error = 0;
 	if (IRisBlack[0] + IRisBlack[1] + IRisBlack[3] + IRisBlack[4] > 0)
 		error = (IRisBlack[0] * (-w3) + IRisBlack[1] * (-w2) + IRisBlack[3] * w2 + IRisBlack[4] * w3) / IRsum;
-	int powerCorrection = Kprate * forwardspeed * error;  // ex. Kp = 100, 也與w2 & w3有關  //沒看懂等改
+	double dt = deltaTime / 1000.0;
+	if (dt <= 0) dt = 0.001;
+	integral += error * dt;
+	double derivative = (error - lastError) / dt;
+	double correction = Kp * error + Ki * integral + Kd * derivative;
+	int powerCorrection = (int)(correction * forwardspeed);
 	int vR = forwardspeed - powerCorrection;              // ex. Tp = 150, 也與w2 & w3有關
 	int vL = forwardspeed + powerCorrection;
 	if (vR >= 255) vR = 255;
@@ -130,9 +134,17 @@ void CarCar::Tracking(int deltaTime) {
 		isInnode = 1;
 		turning = 1;
 		turntime = 0;
+		integral = 0;
+    lastError = 0;
+
 		dir = next_dir;
 		Serial3.println("innode");
+
 	}
+	else {
+        lastError = error;
+    }
+
 	/*if (isInnode && IRsum <= 2) {
 		turning = 1;
 		turntime = 0;
@@ -156,6 +168,8 @@ void CarCar::restart() {
 	dir = mode[modeState];
 	turning = 0;
 	isRunning = 1;
+	lastError = 0;
+    integral = 0;
 }
 
 void CarCar::adjust_motor_error(int deltatime) { //根據目前的速度與差值走直線，不做tracking
