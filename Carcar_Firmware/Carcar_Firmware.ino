@@ -117,8 +117,8 @@ private:
   //Motor
   int target_motor_vL = 0;
   int target_motor_vR = 0;
-  int lastReal_motor_vL = 0;
-  int lastReal_motor_vR = 0;
+  int last_motor_vL = 0;
+  int last_motor_vR = 0;
 
 
   //Navigation(關注在前進左右倒退迴轉的模式)(在Navigation.ino)

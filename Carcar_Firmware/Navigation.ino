@@ -23,10 +23,12 @@ void CarCar::navigating(int deltaTime) {
 			}
 		}
 
-		if(!turning || (turning && dir == FORWARD)){
+	MotorWriting(deltaTime);
+
+	if(!turning || (turning && dir == FORWARD)){ //紀錄直行平均速度
 			trackCount++;
-			sum_vL += target_motor_vL;
-			sum_vR += target_motor_vR;
+			sum_vL += last_motor_vL;
+			sum_vR += last_motor_vR;
 			averagevL = sum_vL/trackCount;
 			averagevR = sum_vR/trackCount;
 		}
@@ -36,10 +38,6 @@ void CarCar::navigating(int deltaTime) {
     	trackCount = 0;
 		}
 	}
-
-
-
-	MotorWriting(deltaTime);
 }
 
 void CarCar::goForward() {
