@@ -23,6 +23,17 @@ int targetLoopTime = 1000 / TARGET_FPS;
 unsigned long lastLoopstartTime = 0;
 unsigned long nextLoopTime = 0;
 
+enum Direction {
+    FORWARD = 0,
+    LEFT = 1,
+    RIGHT = 2,
+    BACKWARD = 3,
+    TURN_BACK = 4,
+    LEFT_AFTER_BACKWARD = 5,
+    RIGHT_AFTER_BACKWARD = 6,
+    STAY_STOP = -1
+  };
+
 class CarCar {
 public:
   CarCar();
@@ -37,16 +48,6 @@ public:
   void navigating(int deltaTime);
   void adjust_motor_error(int deltaTime);
 
-  enum Direction {
-    FORWARD = 0,
-    LEFT = 1,
-    RIGHT = 2,
-    BACKWARD = 3,
-    TURN_BACK = 4,
-    LEFT_AFTER_BACKWARD = 5,
-    RIGHT_AFTER_BACKWARD = 6,
-    STAY_STOP = -1
-  };
 
   int forwardspeed = 150;
   int backwardspeed = forwardspeed;
@@ -128,7 +129,7 @@ private:
   bool isInnode = 0;
   bool turning = 0;
   int turntime = 0;
-  int Min_rightleft_turntime = 60000/forwardspeed;
+  int Min_rightleft_turntime = 40000/forwardspeed;
   int Min_turnback_turntime = 80000/forwardspeed;
   int Min_backward_turntime = 800;
   Direction dir;  // left right forward baackward
@@ -140,9 +141,9 @@ private:
   // PID for tracking
   double lastError = 0;
   double integral = 0;
-  double Kp = 0.1;
-  double Ki = 0.0;
-  double Kd = 0.03;
+  double Kp = 0.07;
+  double Ki = 0.0001;
+  double Kd = 0.00001;
   //adjust
   int start_time;
 
@@ -191,9 +192,9 @@ void loop() {
     nextLoopTime +=  targetLoopTime;
 
     mycar.reading();
-    //mycar.navigating(deltatime);
+    mycar.navigating(deltatime);
     //mycar.adjust_motor_error(deltatime);
-    mycar.run_turn_test(deltatime);
+    //mycar.run_turn_test(deltatime);
 
     //檢查loop花費時間
     maxLoopDuration = max(maxLoopDuration, millis()-currentTime);

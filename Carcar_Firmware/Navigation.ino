@@ -4,6 +4,7 @@ void CarCar::navigating(int deltaTime) {
 	if (!isRunning) {
 		target_motor_vL = 0;
 		target_motor_vR = 0;
+		MotorWriting(deltaTime);
 	} else {
 		if (!turning) {
 			Tracking(deltaTime);
@@ -17,6 +18,8 @@ void CarCar::navigating(int deltaTime) {
 			else if (dir == BACKWARD) goBackward();
 			else if (dir == LEFT_AFTER_BACKWARD) turnleft_after_backward();
 			else if (dir == RIGHT_AFTER_BACKWARD) turnright_after_backward();
+			else if (dir == STAY_STOP) stop();
+
 			turntime += deltaTime;
 			if (!turning) {
 				Tracking(0);  // Pass 0 as deltaTime since time was consumed by turning
@@ -118,8 +121,11 @@ void CarCar::Tracking(int deltaTime) {
 	double error = 0;
 	if (IRisBlack[0] + IRisBlack[1] + IRisBlack[3] + IRisBlack[4] > 0)
 		error = (IRisBlack[0] * (-w3) + IRisBlack[1] * (-w2) + IRisBlack[3] * w2 + IRisBlack[4] * w3) / IRsum;
-	double dt = deltaTime / 1000.0;
-	if (dt <= 0) dt = 0.001;
+	double dt = deltaTime;
+	if (dt <= 0) {
+		dt = 50;
+		lastError = error;
+	}
 	integral += error * dt;
 	double derivative = (error - lastError) / dt;
 	double correction = Kp * error + Ki * integral + Kd * derivative;
@@ -139,11 +145,12 @@ void CarCar::Tracking(int deltaTime) {
 
 		dir = next_dir;
 		Serial3.println("innode");
-
+		//Serial3.print("this node:");
+		Serial3.println(dir);
 	}
 	else {
-        lastError = error;
-    }
+    lastError = error;
+  }
 
 	/*if (isInnode && IRsum <= 2) {
 		turning = 1;
@@ -165,11 +172,10 @@ void CarCar::restart() {
 	isInnode = 0;
 	turntime = 0;
 	modeState = 0;
-	dir = mode[modeState];
 	turning = 0;
 	isRunning = 1;
 	lastError = 0;
-    integral = 0;
+  integral = 0;
 }
 
 void CarCar::adjust_motor_error(int deltatime) { //根據目前的速度與差值走直線，不做tracking

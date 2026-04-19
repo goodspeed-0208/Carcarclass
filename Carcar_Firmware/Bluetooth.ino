@@ -110,7 +110,7 @@ void processBluetoothCommand(String command) {
   command.trim();
   Serial.println(command);
 
-  if (command.startsWith("L ") || command.startsWith("R ")) {
+  /*if (command.startsWith("L ") || command.startsWith("R ")) {
     char dir = command.charAt(0);
     int firstSpace = command.indexOf(' ');
     int secondSpace = command.indexOf(' ', firstSpace + 1);
@@ -126,35 +126,33 @@ void processBluetoothCommand(String command) {
       mycar.start_turn_test(dir, outer, ratio);
     }
     return; // Exit here so it doesn't trigger other commands
-  }
+  }*/
 
-  /*if(command.startsWith("Dir:")){
+  if(command.startsWith("Dir:")){
     int space = command.indexOf(':');
     String s_dir = command.substring(space + 1);
-    switch(s_dir){
-      case "f":
-        mycar.next_dir = FORWARD;
-        break;
-      case "l":
-        mycar.next_dir = LEFT;
-        break;
-      case "r":
-        mycar.next_dir = RIGHT;
-        break;
-      case "t":
-        mycar.next_dir = TURN_BACK;
-        break;
-      case "b":
-        mycar.next_dir = BACKWARD;
-        break;
-      case "lb":
-        mycar.next_dir = LEFT_AFTER_BACKWARD;
-        break;
-      case "rb":
-        mycar.next_dir = RIGHT_AFTER_BACKWARD;
-        break;
+    // Check the direction string and assign the corresponding state
+    if (s_dir == "f") {
+      mycar.next_dir = FORWARD;
+    } else if (s_dir == "l") {
+      mycar.next_dir = LEFT;
+    } else if (s_dir == "r") {
+      mycar.next_dir = RIGHT;
+    } else if (s_dir == "t") {
+      mycar.next_dir = TURN_BACK;
+    } else if (s_dir == "b") {
+      mycar.next_dir = BACKWARD;
+    } else if (s_dir == "lb") {
+      mycar.next_dir = LEFT_AFTER_BACKWARD;
+    } else if (s_dir == "rb") {
+      mycar.next_dir = RIGHT_AFTER_BACKWARD;
+    } else if(s_dir == "stop"){
+      mycar.next_dir = STAY_STOP;
+    } else {
+      // Optional: Handle unexpected input to prevent undefined behavior
+      Serial3.println("the command is wrong.");
     }
-  }*/
+  }
 
   if (command == "receive init") {
     // sendTime is a global variable in the main tab
