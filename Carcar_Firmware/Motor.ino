@@ -19,30 +19,30 @@ void CarCar::MotorWriting(int deltaTime) {
   if (isRunning) {
     if (vL > last_motor_vL) vL = min(vL, last_motor_vL + maxSpeedChange);
     else if (vL < last_motor_vL) vL = max(vL, last_motor_vL - maxSpeedChange);
-    
+
     if (vR > last_motor_vR) vR = min(vR, last_motor_vR + maxSpeedChange);
     else if (vR < last_motor_vR) vR = max(vR, last_motor_vR - maxSpeedChange);
   }
 
-  if(vL != last_motor_vL || vR != last_motor_vR){
+  if (vL != last_motor_vL || vR != last_motor_vR) {
     last_motor_vL = vL;
     last_motor_vR = vR;
 
-    double vL_error = abs(vL)*0.0302-0.202;
-    double vR_error = abs(vR)*0.0302-0.202;
+    double vL_error = abs(vL) * 3 / 100;
+    double vR_error = abs(vR) * 3 / 100;
 
-    if (vL > 0) vL = max(0, vL + (int)(vL_error+0.5)) ; //四捨五入
-    else if (vL < 0) vL = min(0, vL - (int)(vL_error+0.5));
-    
-    if (vR > 0) vR = max(0, vR + (int)(vR_error+0.5)) ; 
-    else if (vR < 0) vR = min(0, vR - (int)(vR_error+0.5));
+    if (vL > 0) vL = max(0, vL + vL_error);
+    else if (vL < 0) vL = min(0, vL - vL_error);
+
+    if (vR > 0) vR = max(0, vR - vR_error);
+    else if (vR < 0) vR = min(0, vR + vR_error);
 
 
     /*if (vL > 0) vL += motor_error;
     else if (vL < 0) vL -= motor_error;
     if (vR > 0) vR -= motor_error;
     else if (vR < 0) vR += motor_error;*/
-    
+
     if (vL >= 255) vL = 255;
     if (vL <= -255) vL = -255;
     if (vR >= 255) vR = 255;
@@ -68,6 +68,5 @@ void CarCar::MotorWriting(int deltaTime) {
     }
     analogWrite(MotorL_PWML, vL);
     analogWrite(MotorR_PWMR, vR);
-
   }
 }

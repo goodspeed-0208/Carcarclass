@@ -23,16 +23,60 @@ int targetLoopTime = 1000 / TARGET_FPS;
 unsigned long lastLoopstartTime = 0;
 unsigned long nextLoopTime = 0;
 
+const unsigned long total_time = 65000;
+
+const int direction_num = 8;
+
 enum Direction {
-    FORWARD = 0,
-    LEFT = 1,
-    RIGHT = 2,
-    BACKWARD = 3,
-    TURN_BACK = 4,
-    LEFT_AFTER_BACKWARD = 5,
-    RIGHT_AFTER_BACKWARD = 6,
-    STAY_STOP = -1
-  };
+  FORWARD = 0,
+  LEFT = 1,
+  RIGHT = 2,
+  BACKWARD = 3,
+  TURN_BACK = 4,
+  LEFT_AFTER_BACKWARD = 5,
+  RIGHT_AFTER_BACKWARD = 6,
+  STAY_STOP = 7
+};
+
+String getDirString(Direction d) {
+  switch (d) {
+    case FORWARD: return "F";
+    case LEFT: return "L";
+    case RIGHT: return "R";
+    case BACKWARD: return "B";
+    case TURN_BACK: return "T";
+    case LEFT_AFTER_BACKWARD: return "LB";
+    case RIGHT_AFTER_BACKWARD: return "RB";
+    case STAY_STOP: return "STOP";
+    default: return "???";
+  }
+}
+
+struct MotionData {
+  unsigned long totalTime;
+  int count;
+  unsigned long maxTime;
+  unsigned long minTime;
+
+  MotionData() {
+    reset();
+  }
+
+  void reset() {
+    totalTime = 0;
+    count = 0;
+    maxTime = 0;
+    minTime = 4294967295;
+  }
+
+  void update(unsigned long motion_duration) {
+    if (motion_duration <= 100) return;
+    count++;
+    totalTime += motion_duration;
+    maxTime = max(maxTime, motion_duration);
+    minTime = min(minTime, motion_duration);
+  }
+};
 
 class CarCar {
 public:
@@ -44,6 +88,9 @@ public:
   void stop();  //目前放在Navigation.ino
   void restart();
 
+  void reportData();
+  void printMotionData(String actionName, MotionData data);
+
   void reading();
   void navigating(int deltaTime);
   void adjust_motor_error(int deltaTime);
@@ -51,9 +98,9 @@ public:
 
   int forwardspeed = 150;
   int backwardspeed = forwardspeed;
-  int turnBackSpeed = forwardspeed/2;
+  int turnBackSpeed = forwardspeed / 2;
   int turnOuterSpeed = forwardspeed;
-  int turnInnerSpeed = forwardspeed*0.15;
+  int turnInnerSpeed = int((turnOuterSpeed - 14) * 0.15) + 14;
   int turnOuterSpeed_back = forwardspeed;
   int turnInnerSpeed_back = 0;
   long sum_vL = 0;
@@ -64,17 +111,24 @@ public:
 
   Direction next_dir;
 
-  double maxAcceleration = 1;
+  double maxAcceleration = 512 / targetLoopTime;  //11基本上就是沒有最大加速度限制
 
   int motor_error = 3;
+
+  //tracking
+  double Kp = 15;
+  double Ki = 0;
+  double Kd = 1500;
 
   // adjust
   bool adjust_start = 0;
 
   // --- Turn Test Variables & Functions ---
-  enum TestState { TEST_WAIT, TEST_TRACK, TEST_TURN };
+  enum TestState { TEST_WAIT,
+                   TEST_TRACK,
+                   TEST_TURN };
   TestState testState = TEST_WAIT;
-  
+
   char testDir = 'L';
   int testOuterSpeed = 0;
   int testInnerSpeed = 0;
@@ -113,7 +167,7 @@ private:
   //IR
   int IRvalue[analognum] = { 0, 0, 0, 0, 0 };
   bool IRisBlack[analognum] = { 0, 0, 0, 0, 0 };
-  int IRisBlackValue[analognum] = {35, 40, 35, 40, 40};
+  int IRisBlackValue[analognum] = { 35, 40, 35, 40, 40 };
   int IRsum = 0;
   int IRtracktime = 0;
 
@@ -129,23 +183,28 @@ private:
   bool isInnode = 0;
   bool turning = 0;
   int turntime = 0;
-  int Min_rightleft_turntime = 40000/forwardspeed;
-  int Min_turnback_turntime = 80000/forwardspeed;
+  int Min_rightleft_turntime = 40000 / forwardspeed;
+  int Min_turnback_turntime = 80000 / forwardspeed;
   int Min_backward_turntime = 800;
   Direction dir;  // left right forward baackward
   Direction mode[8] = { RIGHT, TURN_BACK, FORWARD, TURN_BACK, LEFT, TURN_BACK, FORWARD, TURN_BACK };
-  
   int modeState = 0;
+
+  //data
+  unsigned long start_time = 0;
+  unsigned long motion_startTime = 0;
+  MotionData trackingData;
+  MotionData turningData[direction_num];
+
 
   //Tracking(關注在前進(或後退)的循跡演算法)(在Navigation.ino)
   // PID for tracking
   double lastError = 0;
   double integral = 0;
-  double Kp = 0.07;
-  double Ki = 0.0001;
-  double Kd = 0.00001;
+
+
   //adjust
-  int start_time;
+  unsigned long adjust_start_time;
 
 
 
@@ -189,7 +248,7 @@ void loop() {
     lastLoopstartTime = currentTime;
 
     // 設定下一次執行目標時間
-    nextLoopTime +=  targetLoopTime;
+    nextLoopTime += targetLoopTime;
 
     mycar.reading();
     mycar.navigating(deltatime);
@@ -197,7 +256,7 @@ void loop() {
     //mycar.run_turn_test(deltatime);
 
     //檢查loop花費時間
-    maxLoopDuration = max(maxLoopDuration, millis()-currentTime);
+    maxLoopDuration = max(maxLoopDuration, millis() - currentTime);
   }
 
   /*if(currentTime >= nextSendTime){

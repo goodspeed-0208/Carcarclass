@@ -20,7 +20,7 @@ void CarCar::readIR() {
     Serial3.println(msg);
     IRnexttime += IRsendtime;
   }*/
-  
+
   //Serial3.println(r[0] + " " + r[1] + " " + r[2] + " " + r[3] + " " + r[4]);
   //Serial.println("__________________");
 }

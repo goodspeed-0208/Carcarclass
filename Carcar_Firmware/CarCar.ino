@@ -9,12 +9,11 @@ void CarCar::begin() {
   initMotor();
   initIR();
   initRFID();
-  isInnode = 0;
-  turntime = 0;
-  modeState = 0;
-  dir = mode[modeState];
-  turning = 0;
-  isRunning = 0;
+
+  dir = FORWARD;
+
+  start_time = millis();
+  motion_startTime = start_time;
 }
 
 void CarCar::reading() {

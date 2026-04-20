@@ -11,7 +11,7 @@ void initBlueTooth() {
     Serial.println(baudRates[i]);
 
     Serial3.begin(baudRates[i]);
-    Serial3.setTimeout(100);
+    Serial3.setTimeout(80);
 
     // 2. Force Disconnection
     // Sending "AT" while connected forces the module to disconnect [2].
@@ -83,27 +83,27 @@ bool waitForResponse(const char* expected, unsigned long timeout) {
       if (response.indexOf(expected) != -1) {
         Serial.print("HM10 Response: ");
         Serial.println(response);
-        return true; // Early exit! Saves massive amount of time.
+        return true;  // Early exit! Saves massive amount of time.
       }
     }
-    
+
     // Small delay to prevent tight loop from blocking the CPU completely
-    delay(1); 
+    delay(1);
   }
 
   // If we reach here, it means we waited the full timeout
   if (response.length() > 0) {
     Serial.print("HM10 Response (Timeout or finished): ");
     Serial.println(response);
-    
+
     // Final check just in case the string arrived at the very last millisecond
     if (strlen(expected) > 0) {
-        return (response.indexOf(expected) != -1);
+      return (response.indexOf(expected) != -1);
     }
   }
-  
+
   // If expected was "" (empty), return true since we successfully waited
-  return (strlen(expected) == 0); 
+  return (strlen(expected) == 0);
 }
 
 void processBluetoothCommand(String command) {
@@ -128,7 +128,7 @@ void processBluetoothCommand(String command) {
     return; // Exit here so it doesn't trigger other commands
   }*/
 
-  if(command.startsWith("Dir:")){
+  if (command.startsWith("Dir:")) {
     int space = command.indexOf(':');
     String s_dir = command.substring(space + 1);
     // Check the direction string and assign the corresponding state
@@ -146,26 +146,35 @@ void processBluetoothCommand(String command) {
       mycar.next_dir = LEFT_AFTER_BACKWARD;
     } else if (s_dir == "rb") {
       mycar.next_dir = RIGHT_AFTER_BACKWARD;
-    } else if(s_dir == "stop"){
+    } else if (s_dir == "stop") {
       mycar.next_dir = STAY_STOP;
     } else {
       // Optional: Handle unexpected input to prevent undefined behavior
-      Serial3.println("the command is wrong.");
+      Serial3.println("the command is nonsense.");
     }
+  }
+
+  if (command.startsWith("P ")) {
+    mycar.Kp = command.substring(2).toFloat();  // Update Kp dynamically
+    Serial3.print("Kp set to: ");
+    Serial3.println(mycar.Kp);
+  }
+  // Check if the command is for tuning Kd (e.g., "D 20.0")
+  else if (command.startsWith("D ")) {
+    mycar.Kd = command.substring(2).toFloat();  // Update Kd dynamically
+    Serial3.print("Kd set to: ");
+    Serial3.println(mycar.Kd);
   }
 
   if (command == "receive init") {
     // sendTime is a global variable in the main tab
     Serial.print(millis() - sendTime);
     Serial3.print(millis() - sendTime);
-  }
-  else if (command == "e") {
+  } else if (command == "e") {
     mycar.stop();
-  }
-  else if (command == "s") {
+  } else if (command == "s") {
     mycar.restart();
-  }
-  else if (command.indexOf(' ') != -1) {
+  } else if (command.indexOf(' ') != -1) {
     mycar.adjust_start = 0;
     int spaceIndex = command.indexOf(' ');
 

@@ -10,15 +10,18 @@ void CarCar::navigating(int deltaTime) {
 			Tracking(deltaTime);
 		}
 		if (turning) {
-			if (dir == STAY_STOP) isRunning = 0;
-			else if (dir == LEFT) turnleft();
+			if (dir == STAY_STOP) {
+				if (isRunning) {
+					stop();
+					reportData();
+				}
+			} else if (dir == LEFT) turnleft();
 			else if (dir == RIGHT) turnright();
 			else if (dir == FORWARD) goForward();
 			else if (dir == TURN_BACK) turnback();
 			else if (dir == BACKWARD) goBackward();
 			else if (dir == LEFT_AFTER_BACKWARD) turnleft_after_backward();
 			else if (dir == RIGHT_AFTER_BACKWARD) turnright_after_backward();
-			else if (dir == STAY_STOP) stop();
 
 			turntime += deltaTime;
 			if (!turning) {
@@ -26,30 +29,38 @@ void CarCar::navigating(int deltaTime) {
 			}
 		}
 
-	MotorWriting(deltaTime);
+		MotorWriting(deltaTime);
 
-	if(!turning || (turning && dir == FORWARD)){ //紀錄直行平均速度
+		if (!turning || (turning && dir == FORWARD)) {  //紀錄直行平均速度
 			trackCount++;
 			sum_vL += last_motor_vL;
 			sum_vR += last_motor_vR;
-			averagevL = sum_vL/trackCount;
-			averagevR = sum_vR/trackCount;
-		}
-		else if(turning && dir != BACKWARD){
+			averagevL = sum_vL / trackCount;
+			averagevR = sum_vR / trackCount;
+		} else if (turning && dir != BACKWARD) {
 			sum_vL = 0;
-    	sum_vR = 0;
-    	trackCount = 0;
+			sum_vR = 0;
+			trackCount = 0;
 		}
 	}
 }
 
 void CarCar::goForward() {
 	target_motor_vL = forwardspeed, target_motor_vR = forwardspeed;
-	if (IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+	if (IRsum <= 2 && IRsum >= 1) {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
-		Serial3.println("outnode");
+
+		unsigned long curTime = millis();
+		unsigned long motion_duration = curTime - motion_startTime;
+		String btMsg = "F:" + String(motion_duration) + "\n";
+		btMsg += "runTime:" + String(curTime - start_time) + "\n";
+		btMsg += "outn";
+		Serial3.println(btMsg);
+		turningData[dir].update(motion_duration);
+		motion_startTime = curTime;
+		next_dir = STAY_STOP;
 	}
 }
 
@@ -59,7 +70,16 @@ void CarCar::turnleft() {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
-		Serial3.println("outnode");
+
+		unsigned long curTime = millis();
+		unsigned long motion_duration = curTime - motion_startTime;
+		String btMsg = "L:" + String(motion_duration) + "\n";
+		btMsg += "runTime:" + String(curTime - start_time) + "\n";
+		btMsg += "outn";
+		Serial3.println(btMsg);
+		turningData[dir].update(motion_duration);
+		motion_startTime = curTime;
+		next_dir = STAY_STOP;
 	}
 }
 
@@ -69,7 +89,16 @@ void CarCar::turnright() {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
-		Serial3.println("outnode");
+
+		unsigned long curTime = millis();
+		unsigned long motion_duration = curTime - motion_startTime;
+		String btMsg = "R:" + String(motion_duration) + "\n";
+		btMsg += "runTime:" + String(curTime - start_time) + "\n";
+		btMsg += "outn";
+		Serial3.println(btMsg);
+		turningData[dir].update(motion_duration);
+		motion_startTime = curTime;
+		next_dir = STAY_STOP;
 	}
 }
 
@@ -79,7 +108,16 @@ void CarCar::turnback() {
 		turning = 0;
 		isInnode = 0;
 		modeState = (modeState + 1) % 8;
-		Serial3.println("outnode");
+
+		unsigned long curTime = millis();
+		unsigned long motion_duration = curTime - motion_startTime;
+		String btMsg = "T:" + String(motion_duration) + "\n";
+		btMsg += "runTime:" + String(curTime - start_time) + "\n";
+		btMsg += "outn";
+		Serial3.println(btMsg);
+		turningData[dir].update(motion_duration);
+		motion_startTime = curTime;
+		next_dir = STAY_STOP;
 	}
 }
 
@@ -90,8 +128,8 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 		isInnode = 1;
 		modeState = (modeState + 1) % 8;
 		sum_vL = 0;
-    sum_vR = 0;
-    trackCount = 0;
+		sum_vR = 0;
+		trackCount = 0;
 		Serial3.println("outnode");
 	}
 }
@@ -117,10 +155,12 @@ void CarCar::turnright_after_backward() {
 }
 
 void CarCar::Tracking(int deltaTime) {
-	double w3 = 5, w2 = 3;
+	double w3 = 2, w2 = 1;
 	double error = 0;
-	if (IRisBlack[0] + IRisBlack[1] + IRisBlack[3] + IRisBlack[4] > 0)
+	if (IRsum > 0)
 		error = (IRisBlack[0] * (-w3) + IRisBlack[1] * (-w2) + IRisBlack[3] * w2 + IRisBlack[4] * w3) / IRsum;
+	else
+		error = lastError;
 	double dt = deltaTime;
 	if (dt <= 0) {
 		dt = 50;
@@ -128,9 +168,10 @@ void CarCar::Tracking(int deltaTime) {
 	}
 	integral += error * dt;
 	double derivative = (error - lastError) / dt;
-	double correction = Kp * error + Ki * integral + Kd * derivative;
-	int powerCorrection = (int)(correction * forwardspeed);
-	int vR = forwardspeed - powerCorrection;              // ex. Tp = 150, 也與w2 & w3有關
+	//double correction = Kp * error + Ki * integral + Kd * derivative;
+	//int powerCorrection = (int)(correction * forwardspeed);
+	int powerCorrection = int(Kp * error + Ki * integral + Kd * derivative);
+	int vR = forwardspeed - powerCorrection;  // ex. Tp = 150, 也與w2 & w3有關
 	int vL = forwardspeed + powerCorrection;
 	if (vR >= 255) vR = 255;
 	if (vL >= 255) vL = 255;
@@ -141,16 +182,22 @@ void CarCar::Tracking(int deltaTime) {
 		turning = 1;
 		turntime = 0;
 		integral = 0;
-    lastError = 0;
+		lastError = 0;
 
+		unsigned long curTime = millis();
+		unsigned long motion_duration = curTime - motion_startTime;
+		String btMsg = "Track:" + String(motion_duration) + "\n";
+		btMsg += "runTime:" + String(curTime - start_time) + "\n";
 		dir = next_dir;
-		Serial3.println("innode");
-		//Serial3.print("this node:");
-		Serial3.println(dir);
+		btMsg += "inn\ndir:" + getDirString(dir);
+		Serial3.println(btMsg);
+
+		trackingData.update(motion_duration);
+
+		motion_startTime = curTime;
+	} else {
+		lastError = error;
 	}
-	else {
-    lastError = error;
-  }
 
 	/*if (isInnode && IRsum <= 2) {
 		turning = 1;
@@ -166,51 +213,57 @@ void CarCar::Tracking(int deltaTime) {
 
 void CarCar::stop() {
 	isRunning = 0;
+	target_motor_vL = 0;
+	target_motor_vR = 0;
+	MotorWriting(0);
 }
 
 void CarCar::restart() {
-	isInnode = 0;
+	isInnode = 1;
 	turntime = 0;
-	modeState = 0;
-	turning = 0;
+	//modeState = 0;
+	turning = 1;
+	dir = FORWARD;
 	isRunning = 1;
 	lastError = 0;
-  integral = 0;
+	integral = 0;
+
+	start_time = millis();
+	motion_startTime = start_time;
+	trackingData.reset();
+	for (int i = 0; i < direction_num; i++) turningData[i].reset();
 }
 
-void CarCar::adjust_motor_error(int deltatime) { //根據目前的速度與差值走直線，不做tracking
-	if(!isRunning) {
+void CarCar::adjust_motor_error(int deltatime) {  //根據目前的速度與差值走直線，不做tracking
+	if (!isRunning) {
 		target_motor_vL = 0;
 		target_motor_vR = 0;
-	}
-	else{
+	} else {
 		target_motor_vL = forwardspeed;
 		target_motor_vR = forwardspeed;
-		if(IRsum>=4) {
-			int current_adjust_time = millis() - start_time;
-			if(!adjust_start){
-				start_time = millis();
+		if (IRsum >= 4) {
+			int current_adjust_time = millis() - adjust_start_time;
+			if (!adjust_start) {
+				adjust_start_time = millis();
 				adjust_start = 1;
-			}
-			else if(current_adjust_time >= 1500) {
+			} else if (current_adjust_time >= 1500) {
 				isRunning = 0;
 				adjust_start = 0;
 				Serial3.println(current_adjust_time);
 			}
-			
 		}
 	}
 
-		MotorWriting(deltatime);
+	MotorWriting(deltatime);
 }
 
 void CarCar::start_turn_test(char dir, int outer, float ratio) {
 	testDir = dir;
 	testOuterSpeed = outer;
-	testInnerSpeed = outer * ratio; // Calculate inner speed safely
-	testState = TEST_TRACK;         // Enter tracking state
+	testInnerSpeed = outer * ratio;  // Calculate inner speed safely
+	testState = TEST_TRACK;          // Enter tracking state
 	isRunning = 1;
-	
+
 	Serial.println("Test Started. Tracking to next node...");
 	Serial3.println("Test Started. Tracking to next node...");
 }
@@ -231,10 +284,10 @@ void CarCar::run_turn_test(int deltaTime) {
 
 		case TEST_TRACK:
 			// 1. Track the line to ensure perfect alignment before the turn
-			Tracking(deltaTime); 
-			
+			Tracking(deltaTime);
+
 			// 2. Check if we hit the node
-			if (IRsum >= 4) {    
+			if (IRsum >= 4) {
 				testState = TEST_TURN;
 				turnStartTime = millis();
 				Serial3.println("Node detected! Starting turn...");
@@ -252,12 +305,12 @@ void CarCar::run_turn_test(int deltaTime) {
 			}
 
 			int currentTurnTime = millis() - turnStartTime;
-			int deadzoneTime = 70000/testOuterSpeed; // Blind turning time to escape the node (adjust if needed)
+			int deadzoneTime = 70000 / testOuterSpeed;  // Blind turning time to escape the node (adjust if needed)
 
 			// 2. Exit condition: Passed deadzone AND center IR sees the line
 			if (currentTurnTime > deadzoneTime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
 				testState = TEST_WAIT;
-				isRunning = 0; // Emergency stop!
+				isRunning = 0;  // Emergency stop!
 				target_motor_vL = 0;
 				target_motor_vR = 0;
 
@@ -269,4 +322,62 @@ void CarCar::run_turn_test(int deltaTime) {
 
 	// Always execute motor writing to maintain Slew Rate Limiting
 	MotorWriting(deltaTime);
+}
+
+void CarCar::reportData() {
+	// Use CSV format for easy computer parsing
+	String header = "--- FINAL REPORT ---\nAction,Count,TotalTime(ms),MaxTime(ms),MinTime(ms),AvgTime(ms)";
+	Serial.println(header);
+	Serial3.println(header);
+
+	// Output Tracking data
+	printMotionData("Track", trackingData);
+
+	// Output Turning data for all executed directions
+	for (int i = 0; i < direction_num; i++) {
+		if (turningData[i].count > 0) {
+			String dirName = "Turn_" + getDirString((Direction)i);
+			printMotionData(dirName, turningData[i]);
+		}
+	}
+
+	Serial.println("--- END REPORT ---");
+	Serial3.println("--- END REPORT ---");
+}
+
+void CarCar::printMotionData(String actionName, MotionData data) {
+	unsigned long avgTime = 0;
+	unsigned long safeMinTime = 0;
+
+	// Prevent division by zero and raw MAX_ULONG output when count is 0
+	if (data.count > 0) {
+		avgTime = data.totalTime / data.count;
+		safeMinTime = data.minTime;
+	}
+
+	// Output to USB Serial
+	Serial.print(actionName);
+	Serial.print(",");
+	Serial.print(data.count);
+	Serial.print(",");
+	Serial.print(data.totalTime);
+	Serial.print(",");
+	Serial.print(data.maxTime);
+	Serial.print(",");
+	Serial.print(safeMinTime);
+	Serial.print(",");
+	Serial.println(avgTime);
+
+	// Output to Bluetooth Serial3
+	Serial3.print(actionName);
+	Serial3.print(",");
+	Serial3.print(data.count);
+	Serial3.print(",");
+	Serial3.print(data.totalTime);
+	Serial3.print(",");
+	Serial3.print(data.maxTime);
+	Serial3.print(",");
+	Serial3.print(safeMinTime);
+	Serial3.print(",");
+	Serial3.println(avgTime);
 }
