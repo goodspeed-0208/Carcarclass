@@ -106,6 +106,12 @@ class ScoreboardServer(Scoreboard):
         res = self.socket.call("start_game", payload, namespace="/team")
         log.info(res)
 
+    def getTime(self) :
+        res = self.socket.call("add_UID", "0", namespace="/team")
+        res = cast(dict, res)
+        time_remaining = res.get("time_remaining", 0)
+        return time_remaining
+    
     def add_UID(self, UID_str: str) -> Tuple[int, float]:
         """Send {UID_str} to server to update score. Returns nothing."""
         log.debug(f"Adding UID: {UID_str}")
@@ -126,7 +132,9 @@ class ScoreboardServer(Scoreboard):
         message = res.get("message", "No message")
         score = res.get("score", 0)
         time_remaining = res.get("time_remaining", 0)
-        log.info(message)
+        #log.info(message)
+        #print("remainging time: ")
+        #print(time_remaining)
         return score, time_remaining
 
     def get_current_score(self) -> Optional[int]:
@@ -157,23 +165,31 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     try:
-        scoreboard = ScoreboardServer("TeamName2", "http://140.112.175.18")
+        scoreboard = ScoreboardServer("REAL GOODSPEED", "http://140.112.175.18")
         # scoreboard = ScoreboardFake("TeamName", "data/fakeUID.csv")
-        time.sleep(1)
+        #time.sleep(1)
+        #time_remaining = 70
+        hex_chars = "0123456789ABCDEF"
 
-        score, time_remaining = scoreboard.add_UID("10BA617E")
+        for i in range(0, 16):
+            uid = hex_chars[i] * 8
+            score, time_remaining = scoreboard.add_UID(uid)
+        score, time_remaining = scoreboard.add_UID("9AC053BD")
+        print(score)
         current_score = scoreboard.get_current_score()
         log.info(f"Current score: {current_score}")
-        time.sleep(1)
-
+        log.info(f"Time remaining: {time_remaining}")
+        #time.sleep(1)
+        '''
         score, time_remaining = scoreboard.add_UID("556D04D6")
         current_score = scoreboard.get_current_score()
         log.info(f"Current score: {current_score}")
-        time.sleep(1)
+        #time.sleep(1)
 
         score, time_remaining = scoreboard.add_UID("12345678")
         current_score = scoreboard.get_current_score()
         log.info(f"Current score: {current_score}")
+        '''
 
     except KeyboardInterrupt:
         exit(1)

@@ -6,8 +6,16 @@ import math
 from collections import deque
 
 
-raw_data = pandas.read_csv('maze.csv').values
-row = 3, column = 4
+#raw_data = pandas.read_csv('maze.csv').values
+row = 6
+column = 8
+
+def setsize(r, c) :
+    global row
+    row = r
+    global column
+    column = c
+
 
 def build_adjacency_list(raw_data):
     adj = defaultdict(list)
@@ -31,7 +39,7 @@ def build_adjacency_list(raw_data):
 
 
 
-adj = build_adjacency_list(raw_data)
+#adj = build_adjacency_list(raw_data)
 
 #print(dict(adj))
 
@@ -72,15 +80,16 @@ def bfs_directions(adj, start, goal):
         node, path, heading = queue.popleft()
 
         if node == goal:
-            return path
-            #return convert_to_commands(path)
+            #return path
+            return convert_to_commands(path)
 
         if node in visited:
             continue
         visited.add(node)
 
         for neighbor, direction in adj[node]:
-            queue.append((neighbor, path + [direction], direction))
+            if neighbor not in visited:
+                queue.append((neighbor, path + [direction], direction))
 
     return None
 
@@ -92,6 +101,5 @@ def move(curpos, dir) :
     return curpos
 
 
-
-print(bfs_directions(adj, 2, 12))
+#print("commands: " + bfs_directions(adj, 2, 12))
 
