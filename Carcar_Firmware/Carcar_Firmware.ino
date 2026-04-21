@@ -35,7 +35,8 @@ enum Direction {
   TURN_BACK = 4,
   LEFT_AFTER_BACKWARD = 5,
   RIGHT_AFTER_BACKWARD = 6,
-  STAY_STOP = 7
+  STAY_STOP = 7,
+  WAIT_FOR_COMMAND = 8,
 };
 
 String getDirString(Direction d) {
@@ -48,6 +49,7 @@ String getDirString(Direction d) {
     case LEFT_AFTER_BACKWARD: return "LB";
     case RIGHT_AFTER_BACKWARD: return "RB";
     case STAY_STOP: return "STOP";
+    case WAIT_FOR_COMMAND: return "no command";
     default: return "???";
   }
 }
@@ -85,7 +87,7 @@ public:
 
   void begin();
 
-  void stop();  //目前放在Navigation.ino
+  void stop(int deltaTime = targetLoopTime);  //目前放在Navigation.ino
   void restart();
 
   void reportData();
@@ -111,7 +113,7 @@ public:
 
   Direction next_dir;
 
-  double maxAcceleration = 512 / targetLoopTime;  //11基本上就是沒有最大加速度限制
+  double maxAcceleration = 512.0 / targetLoopTime;  //11基本上就是沒有最大加速度限制
 
   int motor_error = 3;
 
@@ -152,6 +154,7 @@ private:
   void goBackward();
   void turnleft_after_backward();
   void turnright_after_backward();
+  void wait_for_command();
   void Tracking(int deltaTime);
   void MotorWriting(int deltaTime);
 
