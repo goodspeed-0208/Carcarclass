@@ -15,14 +15,19 @@ class HM10ESP32Bridge:
         if self.ser.in_waiting == 0:
             return []
         raw_data = self.ser.read_all().decode('utf-8', errors='ignore')
-        # 【修改】保留換行符號 (keepends=True)
         lines = raw_data.splitlines(keepends=True) 
         payloads = []
         for line in lines:
-            match = self.log_regex.search(line)
-            if match:
-                # 【修改】移除 .strip()，保留原始的 \r 或 \n
-                clean_payload = self.ansi_regex.sub('', match.group(1))
+            # 捨棄會吃掉 \n 的 Regex，直接用字串切割
+            if "bt_com:" in line:
+                # 切割出 bt_com: 後面的所有內容 (包含 \n)
+                payload = line.split("bt_com:", 1)[1]
+                
+                # 移除 ESP32 log 自動加在冒號後面的一個半形空白
+                if payload.startswith(" "):
+                    payload = payload[1:]
+                    
+                clean_payload = self.ansi_regex.sub('', payload)
                 payloads.append(clean_payload)
         return payloads
 
