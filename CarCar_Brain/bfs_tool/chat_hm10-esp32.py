@@ -68,11 +68,15 @@ def senddirmsg(bridge, state):
 
 def background_listener(bridge, state):
     while True:
-        msg = bridge.listen()
-        if msg:
-            print("[HM10]:", msg)
+        # 使用內圈 while，確保緩衝區裡拼好的完整行全部讀完
+        while True:
+            msg = bridge.listen()
+            if not msg:
+                break # 沒有完整的行了，跳出內圈去睡覺
+                
+            print(f"[HM10]: {msg}")
 
-            if msg == "outnode":
+            if msg == "outn":
                 senddirmsg(bridge, state)
 
         time.sleep(0.02)

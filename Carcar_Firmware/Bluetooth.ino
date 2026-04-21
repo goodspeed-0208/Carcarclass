@@ -11,7 +11,7 @@ void initBlueTooth() {
     Serial.println(baudRates[i]);
 
     Serial3.begin(baudRates[i]);
-    Serial3.setTimeout(80);
+    Serial3.setTimeout(50);
 
     // 2. Force Disconnection
     // Sending "AT" while connected forces the module to disconnect [2].
@@ -31,28 +31,39 @@ void initBlueTooth() {
     return;
   }
 
-  // 3. Restore Factory Defaults
+  /// 3. Restore Factory Defaults
   Serial.println("Restoring factory defaults...");
-  sendATCommand("AT+RENEW");  // Restores all setup values
+  sendATCommand("AT+RENEW");  // 執行後，HM-10 會瞬間變回 9600
+  
+  delay(500);                 // 給模組 0.5 秒的重置時間
+  Serial3.begin(9600);        // 【關鍵】Arduino 的 Serial3 也必須降到 9600 才能繼續溝通！
 
   // 4. Set Custom Name via Macro
   Serial.print("Setting name to: ");
   Serial.println(CUSTOM_NAME);
   String nameCmd = "AT+NAME" + String(CUSTOM_NAME);
-  sendATCommand(nameCmd.c_str());  // Max length is 12
+  sendATCommand(nameCmd.c_str());
 
   // 5. Enable Connection Notifications
   Serial.println("Enabling notifications...");
-  sendATCommand("AT+NOTI1");  // Notify when link is established/lost
+  sendATCommand("AT+NOTI1");
 
-  // 6. Get the Bluetooth MAC Address
-  Serial.println("Querying Bluetooth Address");
-  sendATCommand("AT+ADDR?");
+  // 6. 強制將 HM-10 升級到 115200 極速模式！
+  Serial.println("Setting HM-10 Baud Rate to 115200...");
+  
+  // ⚠️ 注意：正版 HM-10 的 115200 指令是 "AT+BAUD4"。
+  // 但市面上有些副廠模組 (如 MLT-BT05 或 AT-09) 的指令可能是 "AT+BAUD8"。
+  // 如果你發現改完後藍牙連不上，請把這裡的 BAUD4 改成 BAUD8 試試看！
+  sendATCommand("AT+BAUD4");  
 
   // 7. Restart the module to apply changes
   Serial.println("Restarting module...");
-  sendATCommand("AT+RESET");  // Restart the module
-  Serial3.begin(9600);        // Now the module would use baudrate 9600
+  sendATCommand("AT+RESET");  
+  
+  delay(500);                 // 等待模組重新開機套用 115200 的設定
+
+  // 8. 最終階段：將 Arduino 的傳輸線也拉高到 115200！雙劍合璧！
+  Serial3.begin(115200); 
 
   Serial.println("Initialization Complete.");
 }
