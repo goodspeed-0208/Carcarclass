@@ -442,8 +442,7 @@ void CarCar::run_turn_test(int deltaTime) {
 
 void CarCar::reportData() {
 	// Use CSV format for easy computer parsing
-	String header = F("--- FINAL REPORT ---\nAction,Count,TotalTime(ms),MaxTime(ms),MinTime(ms),AvgTime(ms)");
-	Serial3.println(header);
+	Serial3.println(F("--- FINAL REPORT ---\nAction,Count,TotalTime(ms),MaxTime(ms),MinTime(ms),AvgTime(ms)"));
 
 	delay(50);
 

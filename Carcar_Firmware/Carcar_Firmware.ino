@@ -25,6 +25,8 @@ unsigned long nextLoopTime = 0;
 
 const unsigned long total_time = 65000;
 
+String btCommandBuffer = ""; //Bluetooth 用
+
 const int direction_num = 8;
 
 enum Direction {
@@ -258,6 +260,17 @@ void loop() {
     Serial.println(sendTime);
   }*/
 
+  while (Serial3.available() > 0) {
+    char c = Serial3.read();
+    if (c == '\n') {
+      btCommandBuffer.trim(); 
+      processBluetoothCommand(btCommandBuffer);
+      btCommandBuffer = ""; // 清空準備接下一道指令
+    } else {
+      btCommandBuffer += c;
+    }
+  }
+
   unsigned long currentTime = millis();
 
   if (currentTime >= nextLoopTime) {
@@ -287,8 +300,8 @@ void loop() {
       maxLoopDuration = 0;
   }*/
 
-  if (Serial3.available()) {
+  /*if (Serial3.available()) {
     String cmd = Serial3.readStringUntil('\n');
     processBluetoothCommand(cmd);
-  }
+  }*/
 }

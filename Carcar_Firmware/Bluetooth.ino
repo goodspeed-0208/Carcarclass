@@ -118,7 +118,6 @@ bool waitForResponse(const char* expected, unsigned long timeout) {
 }
 
 void processBluetoothCommand(String command) {
-  command.trim();
   Serial.println(command);
 
   /*if (command.startsWith("L ") || command.startsWith("R ")) {
