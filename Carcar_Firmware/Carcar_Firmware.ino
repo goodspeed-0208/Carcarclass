@@ -105,6 +105,16 @@ public:
   int turnInnerSpeed = int((turnOuterSpeed - 14) * 0.15) + 14;
   int turnOuterSpeed_back = forwardspeed;
   int turnInnerSpeed_back = 0;
+
+  bool extremeModeOn = false;     // 是否開啟極限模式
+  int extremeSpeed = 200;        // 極限直線速度
+  unsigned long extremeAccelDelay = 400; // 出彎後延遲 0.4s (400ms) 加速
+  unsigned long extremeDecelDelay = 250; // 即將入彎前，離開上個節點 0.25s (250ms) 後減速
+
+  bool lastActionWasTurn = true; // 紀錄上一個動作是否為轉彎 (開局預設為 true 比較安全)
+  bool lastActionWasUTurn = false;
+  int currentSegmentType = 0; //這次的直走類型是甚麼
+
   long sum_vL = 0;
   long sum_vR = 0;
   double averagevL = 0;
@@ -121,6 +131,10 @@ public:
   double Kp = 15;
   double Ki = 0;
   double Kd = 1500;
+
+  double exKp = 10;
+  double exKi = 0;
+  double exKd = 1800;
 
   // adjust
   bool adjust_start = 0;
@@ -196,7 +210,7 @@ private:
   //data
   unsigned long start_time = 0;
   unsigned long motion_startTime = 0;
-  MotionData trackingData;
+  MotionData trackingData[5];
   MotionData turningData[direction_num];
 
 

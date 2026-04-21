@@ -46,14 +46,15 @@ void CarCar::readRFID() {
   unsigned long curTime = millis();
 	unsigned long motion_duration = curTime - motion_startTime;
   String btMsg = uidString + "\n";
-	btMsg += "Track:" + String(motion_duration) + "\n";
-	btMsg += "runTime:" + String(curTime - start_time) + "\n";
+	btMsg += "Tr:" + String(motion_duration) + "\n";
+	btMsg += "runT:" + String(curTime - start_time) + "\n";
 	dir = next_dir;
 	next_dir = WAIT_FOR_COMMAND;
 	btMsg += "inn\ndir:" + getDirString(dir);
 	Serial3.println(btMsg);
 
-	trackingData.update(motion_duration);
+  currentSegmentType = 4;
+	trackingData[currentSegmentType].update(motion_duration);
 
 	motion_startTime = curTime;
 
