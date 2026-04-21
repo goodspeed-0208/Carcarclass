@@ -9,12 +9,15 @@ from collections import deque
 #raw_data = pandas.read_csv('maze.csv').values
 row = 6
 column = 8
+start = 25
 
-def setsize(r, c) :
+def init(r, c, s) :
     global row
     row = r
     global column
     column = c
+    global start
+    start = s
 
 
 def build_adjacency_list(raw_data):
@@ -43,14 +46,16 @@ def build_adjacency_list(raw_data):
 
 #print(dict(adj))
 
-def convert_to_commands(directions):
+def convert_to_commands(directions, start_dir):
     order = ["north", "east", "south", "west"]
     commands = []
 
-    prev = directions[0]  # assume initial orientation = first move
-    commands.append("f")
+    prev = start_dir
+    if (start_dir == -1) : start_dir = directions[0]
+    #prev = directions[0]  # assume initial orientation = first move
+    #commands.append("f")
 
-    for curr in directions[1:]:
+    for curr in directions:
         prev_idx = order.index(prev)
         curr_idx = order.index(curr)
 
@@ -69,7 +74,7 @@ def convert_to_commands(directions):
 
     return "".join(commands)
 
-def bfs_directions(adj, start, goal):
+def bfs_directions(adj, start, start_dir, goal):
     queue = deque()
     queue.append((start, [], None))  
     # (current_node, path_directions, current_heading)
@@ -81,7 +86,7 @@ def bfs_directions(adj, start, goal):
 
         if node == goal:
             #return path
-            return convert_to_commands(path)
+            return convert_to_commands(path, start_dir)
 
         if node in visited:
             continue
@@ -100,6 +105,13 @@ def move(curpos, dir) :
     elif (dir == "east") : curpos -= column
     return curpos
 
-
+def mask_score(mask, targets) :
+    start_pos = ((start-1)//row, (start-1)%row)
+    score = 0
+    for i in range(len(targets)):
+        if (mask & (1 << i) == 0) : continue
+        node = targets[i]
+        score += abs((node-1)//row - start_pos[0]) + abs((node-1)%row - start_pos[1])
+    return score
 #print("commands: " + bfs_directions(adj, 2, 12))
 

@@ -1,5 +1,6 @@
 from hm10_esp32 import HM10ESP32Bridge
 import mybfs
+import mydp
 import pandas
 import time
 import sys
@@ -9,14 +10,19 @@ import score
 PORT = 'COM3'
 EXPECTED_NAME = 'HM10_12'
 
-raw_data = pandas.read_csv('maze.csv').values
+raw_data = pandas.read_csv('big_maze_114.csv').values
 adj = mybfs.build_adjacency_list(raw_data)
+row = 6
+column = 8
+mybfs.setsize(row, column)
+targets = [1, 6, 7, 12, 19, 24, 30, 31, 36, 43, 45, 48]
+start = 25
 print(adj)
 
-row = 3
-column = 2
+DIRS = ["north", "east", "south", "west"]
+
 start = 1
-end = 3
+targets = [2, 3, 4, 5, 6]
 lastcommand = "f"
 scoreboard = score.ScoreboardServer("REAL GOODSPEED", "http://140.112.175.18")
 
@@ -32,11 +38,19 @@ def senddirmsg(bridge, state):
 
     remaining_time = score.getTime()
     print(remaining_time)
-    directions = mybfs.bfs_directions(adj, curpos, end)
-    if not directions: #end
-        print("send:stop")
-        bridge.send("Dir:stop\n")
-        return
+    path, start_dir = mydp.getorder(adj, curpos, targets)
+    directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
+    if not directions: #find target
+        print("ready to get target:", targets[path[0][0]])
+        targets.remove(path[0][0])
+        if (len(targets) == 0) : #end
+            print("send:stop")
+            bridge.send("Dir:stop\n")
+            return
+        else :
+            path, start_dir = mydp.getorder(adj, curpos, targets)
+            directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
+    
 
     # directions[0] 是下一步方向
     command = mybfs.convert_to_commands([curdir] + directions)
@@ -88,16 +102,13 @@ def main():
         sys.exit(0)
 
     print(f"✨ Ready! Connected to {EXPECTED_NAME}")
+
     print("start =", start)
     print("initial curpos =", state["curpos"])
     print("initial curdir =", state["curdir"])
-
-    directions = mybfs.bfs_directions(adj, state["curpos"], end)
-    state["curpos"] = mybfs.move(state["curpos"], directions[0])
-    state["curdir"] = directions[0]
-
-    print("next curpos =", state["curpos"])
-    print("next curdir =", state["curdir"])
+    state["curpos"] = start
+    state["curdir"] = (mydp.getorder(adj, start, targets))[1]
+    state["curpos"] = mybfs.move(state["curpos"], state["curdir"])
 
     threading.Thread(
         target=background_listener,
