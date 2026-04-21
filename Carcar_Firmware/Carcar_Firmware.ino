@@ -243,6 +243,7 @@ void setup() {
   initBlueTooth();
   mycar.begin();
   Serial3.setTimeout(80);  // Minimize timeout to prevent blocking if '\n' is missing
+  btCommandBuffer.reserve(50);
 }
 
 bool test = 0;

@@ -79,7 +79,7 @@ def background_listener(bridge, state):
             if msg == "outn":
                 senddirmsg(bridge, state)
 
-        time.sleep(0.02)
+        time.sleep(0.002)
 
 
 def main():

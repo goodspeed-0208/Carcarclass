@@ -8,27 +8,28 @@ class HM10ESP32Bridge:
         self.log_regex = re.compile(r'bt_com:\s*(.*)')
         self.ansi_regex = re.compile(r'\x1b\[[0-9;]*m')
         
-        self._rx_buffer = "" # 【新增】持續性緩衝區
+        self._rx_buffer = ""
+        self._raw_serial_buffer = ""  # 【新增】用來接合被切斷的 UART 封包
         time.sleep(1)
 
     def _read_bt_com_payloads(self):
         if self.ser.in_waiting == 0:
             return []
         raw_data = self.ser.read_all().decode('utf-8', errors='ignore')
-        lines = raw_data.splitlines(keepends=True) 
+        self._raw_serial_buffer += raw_data # 將新資料接在後面
+        
+        # 用換行符號切割，保留最後一段可能還沒傳完的碎片
+        lines = self._raw_serial_buffer.split('\n')
+        self._raw_serial_buffer = lines.pop() 
+
         payloads = []
         for line in lines:
-            # 捨棄會吃掉 \n 的 Regex，直接用字串切割
             if "bt_com:" in line:
-                # 切割出 bt_com: 後面的所有內容 (包含 \n)
                 payload = line.split("bt_com:", 1)[1]
-                
-                # 移除 ESP32 log 自動加在冒號後面的一個半形空白
                 if payload.startswith(" "):
                     payload = payload[1:]
-                    
                 clean_payload = self.ansi_regex.sub('', payload)
-                payloads.append(clean_payload)
+                payloads.append(clean_payload + "\n") # 補回被 split 吃掉的換行
         return payloads
 
     def set_hm10_name(self, name, timeout=2.0):
