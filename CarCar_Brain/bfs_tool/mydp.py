@@ -3,15 +3,13 @@ import pandas
 from collections import deque
 import heapq
 
-
-
 DIRS = ["north", "east", "south", "west"]
 
 COST = {
     "f": 1,
-    "l": 1,
-    "r": 1,
-    "b": 100
+    "l": 1.2,
+    "r": 1.2,
+    "b": 1.4
 }
 
 def turn_cost(prev, curr):
@@ -29,7 +27,6 @@ def turn_cost(prev, curr):
         return COST["l"], curr
     else:
         return COST["b"], curr
-    
 
 def dijkstra_full(adj, start, start_dir):
     dist = {}
@@ -89,7 +86,7 @@ def build_cost_table(adj, nodes):
 
     return cost#, sp_parents
 
-def dp_flrb_clean(adj, start, targets):
+def dp_flrb_clean(adj, start, targets, time_limit):
     nodes = [start] + targets
     n = len(targets)
 
@@ -116,7 +113,7 @@ def dp_flrb_clean(adj, start, targets):
 
             if best < INF:
                 dp[1 << i][i][d2] = best
-                parent[(1 << i, i, d2)] = None
+                parent[(1 << i, i, d2)] = (0, -1, best_d1)
                 #start_choice[(1 << i, i, d2)] = best_d1
 
             
@@ -146,7 +143,8 @@ def dp_flrb_clean(adj, start, targets):
 
     # final answer
     full = (1 << n) - 1
-    best = INF
+    best_time = INF
+    best_score = 0
     best_state = None
 
     for u in range(n):
@@ -155,73 +153,59 @@ def dp_flrb_clean(adj, start, targets):
                 best = dp[full][u][d]
                 best_state = (full, u, d)
 
-    return best, best_state, parent#, sp_parents
-'''
-def reconstruct_sp(sp_parent, end_state):
-    path = []
-    state = end_state
+    for mask in range(size):
+        for u in range(n):
+            if ((1 << u) & mask == 0) : continue
+            for d in range(4):
+                if dp[mask][u][d] < time_limit:
+                    score = mybfs.mask_score(mask, targets)
+                    if (score > best_score) or (score == best_score and dp[mask][u][d] < best_time) :
+                        best_time = dp[mask][u][d]
+                        best_score = score
+                        best_state = (mask, u, d)
 
-    while state in sp_parent:
-        path.append(state)
-        state = sp_parent[state]
+    return best_time, best_state, parent#, sp_parents
 
-    path.append(state)
-    path.reverse()
 
-    return path
-'''
 def reconstruct_order(parent, best_state):
     path = []
     state = best_state
-    print(state)
-    while state is not None:
+    #print(state)
+    while state[0] != 0:
         mask, u, d = state
-        path.append((mask, u));
+        path.append((u, d));
         state = parent[state]
-        print(state)
+        #print(state)
 
     path.reverse()
-    return path
-'''
-def reconstruct_full_path(start, targets, order, sp_parents):
-    nodes = [start] + targets
+    return path, state[2] # path/ start_dir
 
-    full_path = []
-    prev_node_idx = 0  # start index
-    best, best_state, dp_parent, sp_parents = dp_flrb_clean(adj, start, targets)
-    _, _, start_dir = dp_parent[best_state]
-    prev_dir = DIRS[start_dir]
+def getorder(adj, start, targets) :
+    best, best_state, parent = dp_flrb_clean(adj, start, targets)
+    path, start_dir = reconstruct_order(parent, best_state);
+    return path, start_dir
 
-    for (target_idx, end_dir) in order:
-        sp_parent = sp_parents[(prev_node_idx, DIRS.index(prev_dir))]
 
-        end_state = (nodes[target_idx + 1], DIRS[end_dir])
-
-        segment = reconstruct_sp(sp_parent, end_state)
-
-        if full_path:
-            segment = segment[1:]  # avoid duplicate node
-
-        full_path.extend(segment)
-
-        prev_node_idx = target_idx + 1
-        prev_dir = DIRS[end_dir]
-
-    return full_path
-'''
-
-raw_data = pandas.read_csv('medium_maze.csv').values
-mybfs.setsize(3, 4)
 raw_data = pandas.read_csv('big_maze_114.csv').values
-mybfs.setsize(6, 8)
+mybfs.init(6, 8, 25)
 adj = mybfs.build_adjacency_list(raw_data)
-#print(adj)
-#targets = [1, 2, 3, 4, 6, 8, 11, 7, 9, 10, 12]
-#best, best_state, parent = dp_flrb_clean(adj, 5, targets)
+
 targets = [1, 6, 7, 12, 19, 24, 30, 31, 36, 43, 45, 48]
-best, best_state, parent = dp_flrb_clean(adj, 25, targets)
-print("//////")
-print(best)
-path = reconstruct_order(parent, best_state);
-for (mask, i) in path:
-    print(mask, targets[i])
+start = 25
+best_time, best_state, parent = dp_flrb_clean(adj, start, targets, 49)
+print("cost:", best_time)
+print("points:", mybfs.mask_score(best_state[0], targets))
+path, start_dir = reconstruct_order(parent, best_state);
+print("path: ")
+for (u, d) in path:
+    print(targets[u], d)
+
+last, last_dir = path[0]
+print(0, targets[last], DIRS[start_dir], ": ", end = "")
+print(mybfs.bfs_directions(adj, start, DIRS[start_dir], targets[last]))
+
+for (i, d) in path[1:]:
+    print(targets[last], targets[i], DIRS[last_dir], ": ", end = "")
+    print(mybfs.bfs_directions(adj, targets[last], DIRS[last_dir], targets[i]))
+    last = i
+    last_dir = d
