@@ -153,7 +153,7 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 }
 
 void CarCar::turnleft_after_backward() {
-	target_motor_vL = turnInnerSpeed_back, target_motor_vR = turnOuterSpeed_back;
+	target_motor_vL = turnOuterSpeed_back, target_motor_vR = turnInnerSpeed_back;
 	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
 		turning = 0;
 		isInnode = 0;
@@ -172,7 +172,7 @@ void CarCar::turnleft_after_backward() {
 }
 
 void CarCar::turnright_after_backward() {
-	target_motor_vL = turnOuterSpeed_back, target_motor_vR = turnInnerSpeed_back;
+	target_motor_vL = turnInnerSpeed_back, target_motor_vR = turnOuterSpeed_back;
 	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
 		turning = 0;
 		isInnode = 0;
