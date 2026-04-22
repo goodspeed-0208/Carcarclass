@@ -59,10 +59,10 @@ void CarCar::goForward() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -80,10 +80,10 @@ void CarCar::turnleft() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -101,10 +101,10 @@ void CarCar::turnright() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -122,10 +122,10 @@ void CarCar::turnback() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -151,14 +151,14 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		turningData[dir].update(motion_duration);
+
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,inn,dir:%s",
+		         getDirString(dir).c_str(), motion_duration, curTime - start_time, getDirString(next_dir).c_str());
+		Serial3.println(btBuffer);
 
 		dir = next_dir;
 		next_dir = WAIT_FOR_COMMAND;
-		btMsg += "inn\ndir:" + getDirString(dir);
-		Serial3.println(btMsg);
 
 		motion_startTime = curTime;
 	}
@@ -175,10 +175,10 @@ void CarCar::turnleft_after_backward() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -196,10 +196,10 @@ void CarCar::turnright_after_backward() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -302,12 +302,13 @@ void CarCar::Tracking(int deltaTime) {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = "Tr:" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
 		dir = next_dir;
 		next_dir = WAIT_FOR_COMMAND;
-		btMsg += "inn\ndir:" + getDirString(dir);
-		Serial3.println(btMsg);
+
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "Tr:%lu,runT:%lu,inn,dir:%s",
+		          motion_duration, curTime - start_time, getDirString(dir).c_str());
+		Serial3.println(btBuffer);
 
 		trackingData[currentSegmentType].update(motion_duration);
 		motion_startTime = curTime;
@@ -453,7 +454,7 @@ void CarCar::reportData() {
 		printMotionData("Track_Accel", trackingData[2]);
 		printMotionData("Track_Decel", trackingData[3]);
 	}
-	if(trackingData[4].count > 0) printMotionData("Track_UTurn", trackingData[4]);
+	if (trackingData[4].count > 0) printMotionData("Track_UTurn", trackingData[4]);
 
 	// Output Turning data for all executed directions
 	for (int i = 0; i < direction_num; i++) {

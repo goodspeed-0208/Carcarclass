@@ -35,28 +35,29 @@ void CarCar::readRFID() {
   }
 
   // Send the complete string in one packet to avoid BLE fragmentation
- 
 
-  isInnode = 1; //與Tracking入節點時同步
-	turning = 1;
-	turntime = 0;
-	integral = 0;
-	lastError = 0;
+
+  isInnode = 1;  //與Tracking入節點時同步
+  turning = 1;
+  turntime = 0;
+  integral = 0;
+  lastError = 0;
 
   unsigned long curTime = millis();
-	unsigned long motion_duration = curTime - motion_startTime;
-  String btMsg = uidString + "\n";
-	btMsg += "Tr:" + String(motion_duration) + "\n";
-	btMsg += "runT:" + String(curTime - start_time) + "\n";
-	dir = next_dir;
-	next_dir = WAIT_FOR_COMMAND;
-	btMsg += "inn\ndir:" + getDirString(dir);
-	Serial3.println(btMsg);
+  unsigned long motion_duration = curTime - motion_startTime;
+  
+  dir = next_dir;
+  next_dir = WAIT_FOR_COMMAND;
+
+  char btBuffer[80];
+  snprintf(btBuffer, sizeof(btBuffer), "%s,Tr:%lu,runT:%lu,inn,dir:%s",
+           uidString.c_str(), motion_duration, curTime - start_time, getDirString(dir).c_str());
+  Serial3.println(btBuffer);
 
   currentSegmentType = 4;
-	trackingData[currentSegmentType].update(motion_duration);
+  trackingData[currentSegmentType].update(motion_duration);
 
-	motion_startTime = curTime;
+  motion_startTime = curTime;
 
   // Halt PICC and stop encryption on PCD
   mfrc522->PICC_HaltA();

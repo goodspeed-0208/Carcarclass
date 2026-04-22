@@ -179,7 +179,7 @@ void processBluetoothCommand(String command) {
   if (command == "receive init") {
     // sendTime is a global variable in the main tab
     Serial.print(millis() - sendTime);
-    Serial3.print(millis() - sendTime);
+    Serial3.println(millis() - sendTime);
   } else if (command == "e") {
     mycar.stop();
   } else if (command == "s") {
