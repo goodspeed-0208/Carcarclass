@@ -76,7 +76,7 @@ def background_listener(bridge, state):
                 
             print(f"[HM10]: {msg}")
 
-            if msg == "outn":
+            if "outn" in msg:
                 senddirmsg(bridge, state)
 
         time.sleep(0.002)
