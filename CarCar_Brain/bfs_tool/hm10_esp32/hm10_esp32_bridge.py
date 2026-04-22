@@ -5,25 +5,31 @@ import re
 class HM10ESP32Bridge:
     def __init__(self, port, rx_timeout=0.1):
         self.ser = serial.Serial(port=port, baudrate=115200, timeout=rx_timeout)
-        # Matches 'bt_com' tag logs from ESP32
         self.log_regex = re.compile(r'bt_com:\s*(.*)')
-        # Strips ANSI color codes often sent by ESP-IDF
         self.ansi_regex = re.compile(r'\x1b\[[0-9;]*m')
-        time.sleep(1) 
+        
+        self._rx_buffer = ""
+        self._raw_serial_buffer = ""  # 【新增】用來接合被切斷的 UART 封包
+        time.sleep(1)
 
     def _read_bt_com_payloads(self):
-        """Reads and cleans all 'bt_com' tagged logs currently in buffer."""
         if self.ser.in_waiting == 0:
             return []
         raw_data = self.ser.read_all().decode('utf-8', errors='ignore')
-        lines = raw_data.splitlines()
+        self._raw_serial_buffer += raw_data # 將新資料接在後面
+        
+        # 用換行符號切割，保留最後一段可能還沒傳完的碎片
+        lines = self._raw_serial_buffer.split('\n')
+        self._raw_serial_buffer = lines.pop() 
+
         payloads = []
         for line in lines:
-            match = self.log_regex.search(line)
-            if match:
-                # Clean ANSI colors and whitespace
-                clean_payload = self.ansi_regex.sub('', match.group(1)).strip()
-                payloads.append(clean_payload)
+            if "bt_com:" in line:
+                payload = line.split("bt_com:", 1)[1]
+                if payload.startswith(" "):
+                    payload = payload[1:]
+                clean_payload = self.ansi_regex.sub('', payload)
+                payloads.append(clean_payload + "\n") # 補回被 split 吃掉的換行
         return payloads
 
     def set_hm10_name(self, name, timeout=2.0):
@@ -78,10 +84,19 @@ class HM10ESP32Bridge:
         return False
 
     def listen(self):
-        """Returns concatenated data from BLE (ignores AT replies)."""
+        """Returns completely assembled lines separated by \\n."""
         logs = self._read_bt_com_payloads()
         data_parts = [l for l in logs if not l.startswith("OK+")]
-        return "".join(data_parts)
+        
+        # 把新收到的碎片全部黏到緩衝區尾巴
+        self._rx_buffer += "".join(data_parts)
+        
+        # 只要緩衝區裡有換行符號，就切出一行完整的回傳
+        if '\n' in self._rx_buffer:
+            line, self._rx_buffer = self._rx_buffer.split('\n', 1)
+            return line.strip()
+            
+        return None
 
     def send(self, text):
         """Sends data to be forwarded to HM-10 via GATT."""

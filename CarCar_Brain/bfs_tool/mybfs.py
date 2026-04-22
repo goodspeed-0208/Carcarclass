@@ -68,7 +68,7 @@ def convert_to_commands(directions, start_dir):
         elif diff == 3:
             commands.append("l")
         elif diff == 2:
-            commands.append("b")
+            commands.append("t")
 
         prev = curr
 

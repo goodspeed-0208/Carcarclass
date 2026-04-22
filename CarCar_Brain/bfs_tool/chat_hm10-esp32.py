@@ -6,17 +6,18 @@ import time
 import sys
 import threading
 import score
+import re
 
 PORT = 'COM3'
 EXPECTED_NAME = 'HM10_12'
 
-raw_data = pandas.read_csv('big_maze_114.csv').values
+raw_data = pandas.read_csv('cross_maze.csv').values
 adj = mybfs.build_adjacency_list(raw_data)
-row = 6
-column = 8
-mybfs.setsize(row, column)
-targets = [1, 6, 7, 12, 19, 24, 30, 31, 36, 43, 45, 48]
-start = 25
+row = 3
+column = 3
+start = 2
+mybfs.init(row, column, start)
+targets = [4, 6, 8]
 print(adj)
 
 DIRS = ["north", "east", "south", "west"]
@@ -38,7 +39,7 @@ def senddirmsg(bridge, state):
 
     remaining_time = score.getTime()
     print(remaining_time)
-    path, start_dir = mydp.getorder(adj, curpos, targets)
+    path, start_dir = mydp.getorder(adj, curpos, targets, remaining_time)
     directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
     if not directions: #find target
         print("ready to get target:", targets[path[0][0]])
@@ -55,8 +56,13 @@ def senddirmsg(bridge, state):
     # directions[0] 是下一步方向
     command = mybfs.convert_to_commands([curdir] + directions)
 
-    print("send:", command[1])
-    bridge.send("Dir:" + command[1] + "\n")
+    if (last == 'b' and (command[1] == 'r' or command[1] == 'l')):
+        bridge.send("Dir:b" + command[1] + "\n")
+        print("send:b", command[1])
+    else:
+        print("send:", command[1])
+        bridge.send("Dir:" + command[1] + "\n")
+        last = command[1]
 
     # 更新狀態
     state["curpos"] = mybfs.move(curpos, directions[0])
@@ -65,17 +71,34 @@ def senddirmsg(bridge, state):
     print("new curpos:", state["curpos"])
     print("new curdir:", state["curdir"])
 
+def handle_uid(uid) :
+    scoreboard.add_UID(uid)
+    print("get_UID:", uid)
 
 def background_listener(bridge, state):
     while True:
-        msg = bridge.listen()
-        if msg:
-            print("[HM10]:", msg)
+        # 使用內圈 while，確保緩衝區裡拼好的完整行全部讀完
+        while True:
+            msg = bridge.listen()
+            if not msg:
+                break # 沒有完整的行了，跳出內圈去睡覺
+                
+            print(f"[HM10]: {msg}")
 
-            if msg == "outnode":
+            if "outn" in msg:
                 senddirmsg(bridge, state)
+            
+            match = re.search(r"uid:\s*([0-9A-Fa-f]{8})", msg)
+            if match:
+                uid = match.group(1)
+                print("UID detected:", uid)
 
-        time.sleep(0.02)
+                handle_uid(uid, state)
+
+
+            
+
+        time.sleep(0.002)
 
 
 def main():
@@ -136,3 +159,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

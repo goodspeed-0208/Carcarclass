@@ -180,32 +180,35 @@ def reconstruct_order(parent, best_state):
     path.reverse()
     return path, state[2] # path/ start_dir
 
-def getorder(adj, start, targets) :
-    best, best_state, parent = dp_flrb_clean(adj, start, targets)
+def getorder(adj, start, targets, time_limit) :
+    best, best_state, parent = dp_flrb_clean(adj, start, targets, time_limit)
     path, start_dir = reconstruct_order(parent, best_state);
     return path, start_dir
 
+def test():
+    raw_data = pandas.read_csv('cross_maze.csv').values
+    mybfs.init(3, 3, 2)
+    adj = mybfs.build_adjacency_list(raw_data)
 
-raw_data = pandas.read_csv('big_maze_114.csv').values
-mybfs.init(6, 8, 25)
-adj = mybfs.build_adjacency_list(raw_data)
+    targets = [4, 6, 8]
+    start = 2
+    #targets = [1, 6, 7, 12, 19, 24, 30, 31, 36, 43, 45, 48]
+    #start = 25
+    best_time, best_state, parent = dp_flrb_clean(adj, start, targets, 100)
+    print("cost:", best_time)
+    print("points:", mybfs.mask_score(best_state[0], targets))
+    path, start_dir = reconstruct_order(parent, best_state);
+    print("path: ")
+    for (u, d) in path:
+        print(targets[u], d)
 
-targets = [1, 6, 7, 12, 19, 24, 30, 31, 36, 43, 45, 48]
-start = 25
-best_time, best_state, parent = dp_flrb_clean(adj, start, targets, 49)
-print("cost:", best_time)
-print("points:", mybfs.mask_score(best_state[0], targets))
-path, start_dir = reconstruct_order(parent, best_state);
-print("path: ")
-for (u, d) in path:
-    print(targets[u], d)
+    last, last_dir = path[0]
+    print(0, targets[last], DIRS[start_dir], ": ", end = "")
+    print(mybfs.bfs_directions(adj, start, DIRS[start_dir], targets[last]))
 
-last, last_dir = path[0]
-print(0, targets[last], DIRS[start_dir], ": ", end = "")
-print(mybfs.bfs_directions(adj, start, DIRS[start_dir], targets[last]))
+    for (i, d) in path[1:]:
+        print(targets[last], targets[i], DIRS[last_dir], ": ", end = "")
+        print(mybfs.bfs_directions(adj, targets[last], DIRS[last_dir], targets[i]))
+        last = i
+        last_dir = d
 
-for (i, d) in path[1:]:
-    print(targets[last], targets[i], DIRS[last_dir], ": ", end = "")
-    print(mybfs.bfs_directions(adj, targets[last], DIRS[last_dir], targets[i]))
-    last = i
-    last_dir = d
