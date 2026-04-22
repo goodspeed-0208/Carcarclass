@@ -36,6 +36,22 @@ void CarCar::readRFID() {
 
   // Send the complete string in one packet to avoid BLE fragmentation
 
+  // 2. 新增：檢查是否已經讀取過
+  for (int i = 0; i < visitedCount; i++) {
+    if (visitedUIDs[i] == uidString) {
+      // 已經讀過這張卡了，直接停止後續動作
+      mfrc522->PICC_HaltA();
+      mfrc522->PCD_StopCrypto1();
+      return; 
+    }
+  }
+
+  // 3. 新增：若是新卡，加入紀錄
+  if (visitedCount < MAX_VISITED) {
+    visitedUIDs[visitedCount] = uidString;
+    visitedCount++;
+  }
+
 
   isInnode = 1;  //與Tracking入節點時同步
   turning = 1;

@@ -102,13 +102,13 @@ public:
 
   int forwardspeed = 150;
   int backwardspeed = forwardspeed;
-  int turnBackSpeed = forwardspeed / 2;
+  int turnBackSpeed = forwardspeed / 1.5;
   int turnOuterSpeed = forwardspeed;
   int turnInnerSpeed = int((turnOuterSpeed - 14) * 0.15) + 14;
   int turnOuterSpeed_back = forwardspeed;
   int turnInnerSpeed_back = 0;
 
-  bool extremeModeOn = false;     // 是否開啟極限模式
+  bool extremeModeOn = true;     // 是否開啟極限模式
   int extremeSpeed = 200;        // 極限直線速度
   unsigned long extremeAccelDelay = 400; // 出彎後延遲 0.4s (400ms) 加速
   unsigned long extremeDecelDelay = 250; // 即將入彎前，離開上個節點 0.25s (250ms) 後減速
@@ -128,6 +128,11 @@ public:
   double maxAcceleration = 512.0 / targetLoopTime;  //11基本上就是沒有最大加速度限制
 
   int motor_error = 3;
+
+  //RFID
+  String visitedUIDs[30]; 
+  int visitedCount = 0;
+  const int MAX_VISITED = 30;
 
   //tracking
   double Kp = 15;

@@ -60,7 +60,7 @@ void CarCar::goForward() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
 		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -81,7 +81,7 @@ void CarCar::turnleft() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
 		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -102,7 +102,7 @@ void CarCar::turnright() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
 		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -123,7 +123,7 @@ void CarCar::turnback() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
 		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -176,7 +176,7 @@ void CarCar::turnleft_after_backward() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
 		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -197,7 +197,7 @@ void CarCar::turnright_after_backward() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
 		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -344,6 +344,12 @@ void CarCar::restart() {
 	isRunning = 1;
 	lastError = 0;
 	integral = 0;
+
+	// 新增：重設 RFID 紀錄
+  visitedCount = 0;
+  for (int i = 0; i < MAX_VISITED; i++) {
+    visitedUIDs[i] = "";
+  }
 
 	start_time = millis();
 	motion_startTime = start_time;
