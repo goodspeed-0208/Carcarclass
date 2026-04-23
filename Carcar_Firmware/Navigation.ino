@@ -50,7 +50,7 @@ void CarCar::goForward() {
 	target_motor_vL = forwardspeed, target_motor_vR = forwardspeed;
 	if (extremeModeOn) target_motor_vL = extremeSpeed, target_motor_vR = extremeSpeed;
 
-	if (IRsum <= 2 && IRsum >= 1) {
+	if (turntime >= Min_forward_turntime && IRsum <= 2 && IRsum >= 1) {
 		turning = 0;
 		isInnode = 0;
 		lastActionWasTurn = false;
@@ -60,8 +60,8 @@ void CarCar::goForward() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
-		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
@@ -81,8 +81,8 @@ void CarCar::turnleft() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
-		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
@@ -102,8 +102,8 @@ void CarCar::turnright() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
-		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
@@ -123,8 +123,8 @@ void CarCar::turnback() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
-		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
@@ -176,8 +176,8 @@ void CarCar::turnleft_after_backward() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
-		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
@@ -197,8 +197,8 @@ void CarCar::turnright_after_backward() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "outn,%s:%lu,runT:%lu",
-		         getDirString(dir).c_str(), motion_duration, curTime - start_time);
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
@@ -306,8 +306,8 @@ void CarCar::Tracking(int deltaTime) {
 		next_dir = WAIT_FOR_COMMAND;
 
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "Tr:%lu,runT:%lu,inn,dir:%s",
-		          motion_duration, curTime - start_time, getDirString(dir).c_str());
+		snprintf(btBuffer, sizeof(btBuffer), "Tr:%lu || inn,dir:%s",
+		          motion_duration, getDirString(dir).c_str());
 		Serial3.println(btBuffer);
 
 		trackingData[currentSegmentType].update(motion_duration);
@@ -340,6 +340,7 @@ void CarCar::restart() {
 	turntime = 0;
 	//modeState = 0;
 	turning = 1;
+	turntime = Min_forward_turntime;
 	dir = FORWARD;
 	isRunning = 1;
 	lastError = 0;

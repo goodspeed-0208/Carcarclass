@@ -53,27 +53,36 @@ void CarCar::readRFID() {
   }
 
 
-  isInnode = 1;  //與Tracking入節點時同步
-  turning = 1;
-  turntime = 0;
-  integral = 0;
-  lastError = 0;
+  if (turning == 1) {
+    // IR triggered first. Do not overwrite dir, next_dir, or turntime.
+    // Only send the RFID data via Bluetooth to notify the system.
+    char btBuffer[80];
+    snprintf(btBuffer, sizeof(btBuffer), "%s", uidString.c_str());
+    Serial3.println(btBuffer);
+  } else {
+    // Normal case: RFID triggered first or perfectly simultaneous with IR.
+    isInnode = 1;  
+    turning = 1;
+    turntime = 0;
+    integral = 0;
+    lastError = 0;
 
-  unsigned long curTime = millis();
-  unsigned long motion_duration = curTime - motion_startTime;
-  
-  dir = next_dir;
-  next_dir = WAIT_FOR_COMMAND;
+    unsigned long curTime = millis();
+    unsigned long motion_duration = curTime - motion_startTime;
+    
+    dir = next_dir;
+    next_dir = WAIT_FOR_COMMAND;
 
-  char btBuffer[80];
-  snprintf(btBuffer, sizeof(btBuffer), "%s,Tr:%lu,runT:%lu,inn,dir:%s",
-           uidString.c_str(), motion_duration, curTime - start_time, getDirString(dir).c_str());
-  Serial3.println(btBuffer);
+    char btBuffer[80];
+    snprintf(btBuffer, sizeof(btBuffer), "%s,Tr:%lu,inn,dir:%s",
+             uidString.c_str(), motion_duration, getDirString(dir).c_str());
+    Serial3.println(btBuffer);
 
-  currentSegmentType = 4;
-  trackingData[currentSegmentType].update(motion_duration);
+    currentSegmentType = 4;
+    trackingData[currentSegmentType].update(motion_duration);
 
-  motion_startTime = curTime;
+    motion_startTime = curTime;
+  }
 
   // Halt PICC and stop encryption on PCD
   mfrc522->PICC_HaltA();

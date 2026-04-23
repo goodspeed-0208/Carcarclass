@@ -4,13 +4,13 @@ void CarCar::initIR() {
 }
 
 void CarCar::readIR() {
-  String msg = "";
+  //String msg = "";
   IRsum = 0;
   for (int i = 0; i < analognum; i++) {
     int sensorValue = analogRead(analogPin[i]);  // 宣告 sensorValue 這變數是整數(Integer)
     IRvalue[i] = sensorValue;
     //Serial.println(sensorValue);  // 將數值印出來
-    msg = msg + IRvalue[i] + " ";
+    //msg = msg + IRvalue[i] + " ";
     if (IRvalue[i] >= IRisBlackValue[i]) IRisBlack[i] = 1;
     else IRisBlack[i] = 0;
     IRsum += IRisBlack[i];

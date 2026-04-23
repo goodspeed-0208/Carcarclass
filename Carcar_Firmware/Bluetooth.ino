@@ -176,6 +176,18 @@ void processBluetoothCommand(String command) {
     Serial3.println(mycar.Kd);
   }
 
+  if (command.startsWith("EP ")) {
+    mycar.exKp = command.substring(3).toFloat();  // Update Kp dynamically
+    Serial3.print("exKp set to: ");
+    Serial3.println(mycar.exKp);
+  }
+  // Check if the command is for tuning Kd (e.g., "D 20.0")
+  else if (command.startsWith("ED ")) {
+    mycar.exKd = command.substring(3).toFloat();  // Update Kd dynamically
+    Serial3.print("exKd set to: ");
+    Serial3.println(mycar.exKd);
+  }
+
   if (command == "receive init") {
     // sendTime is a global variable in the main tab
     Serial.print(millis() - sendTime);

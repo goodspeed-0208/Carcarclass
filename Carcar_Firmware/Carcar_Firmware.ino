@@ -207,6 +207,7 @@ private:
   bool isInnode = 0;
   bool turning = 0;
   int turntime = 0;
+  int Min_forward_turntime = 20000 / forwardspeed;
   int Min_rightleft_turntime = 40000 / forwardspeed;
   int Min_turnback_turntime = 80000 / forwardspeed;
   int Min_backward_turntime = 800;
@@ -249,6 +250,9 @@ void setup() {
   mycar.begin();
   Serial3.setTimeout(80);  // Minimize timeout to prevent blocking if '\n' is missing
   btCommandBuffer.reserve(50);
+
+  lastLoopstartTime = millis(); // 防止setup過久，迴圈一直執行
+  nextLoopTime = lastLoopstartTime + targetLoopTime;
 }
 
 bool test = 0;
