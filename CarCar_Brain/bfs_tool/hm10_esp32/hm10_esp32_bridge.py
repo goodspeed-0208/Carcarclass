@@ -17,8 +17,6 @@ class HM10ESP32Bridge:
             return []
         raw_data = self.ser.read_all().decode('utf-8', errors='ignore')
         self._raw_serial_buffer += raw_data
-        
-        # Split by newline to parse ESP32 logs
         lines = self._raw_serial_buffer.split('\n')
         self._raw_serial_buffer = lines.pop() 
 
@@ -85,19 +83,16 @@ class HM10ESP32Bridge:
         return False
 
     def listen(self):
-        """Returns completely assembled lines separated by \\r."""
+        """Returns completely assembled lines separated by \r."""
         logs = self._read_bt_com_payloads()
         data_parts = [l for l in logs if not l.startswith("OK+")]
-        
+
         self._rx_buffer += "".join(data_parts)
-        
-        # Use \r as the delimiter because Arduino println() sends \r\n,
-        # and the \n was consumed by the ESP32 log parser split('\n')
         if '\r' in self._rx_buffer:
             line, self._rx_buffer = self._rx_buffer.split('\r', 1)
             # Remove any trailing whitespace or remaining \n
             return line.strip()
-            
+
         return None
 
     def send(self, text):

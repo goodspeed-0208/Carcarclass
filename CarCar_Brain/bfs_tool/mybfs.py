@@ -68,7 +68,7 @@ def convert_to_commands(directions, start_dir):
         elif diff == 3:
             commands.append("l")
         elif diff == 2:
-            commands.append("t")
+            commands.append("b")
 
         prev = curr
 
@@ -99,8 +99,8 @@ def bfs_directions(adj, start, start_dir, goal):
     return None
 
 def move(curpos, dir) :
-    if (dir == "north") : curpos -= 1
-    elif (dir == "south") : curpos += 1
+    if (dir == "north") : curpos += 1
+    elif (dir == "south") : curpos -= 1
     elif (dir == "west") : curpos += row
     elif (dir == "east") : curpos -= row
     return curpos
