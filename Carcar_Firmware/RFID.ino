@@ -35,28 +35,54 @@ void CarCar::readRFID() {
   }
 
   // Send the complete string in one packet to avoid BLE fragmentation
- 
 
-  isInnode = 1; //與Tracking入節點時同步
-	turning = 1;
-	turntime = 0;
-	integral = 0;
-	lastError = 0;
+  // 2. 新增：檢查是否已經讀取過
+  for (int i = 0; i < visitedCount; i++) {
+    if (visitedUIDs[i] == uidString) {
+      // 已經讀過這張卡了，直接停止後續動作
+      mfrc522->PICC_HaltA();
+      mfrc522->PCD_StopCrypto1();
+      return; 
+    }
+  }
 
-  unsigned long curTime = millis();
-	unsigned long motion_duration = curTime - motion_startTime;
-  String btMsg = uidString + "\n";
-	btMsg += "Tr:" + String(motion_duration) + "\n";
-	btMsg += "runT:" + String(curTime - start_time) + "\n";
-	dir = next_dir;
-	next_dir = WAIT_FOR_COMMAND;
-	btMsg += "inn\ndir:" + getDirString(dir);
-	Serial3.println(btMsg);
+  // 3. 新增：若是新卡，加入紀錄
+  if (visitedCount < MAX_VISITED) {
+    visitedUIDs[visitedCount] = uidString;
+    visitedCount++;
+  }
 
-  currentSegmentType = 4;
-	trackingData[currentSegmentType].update(motion_duration);
 
-	motion_startTime = curTime;
+  if (turning == 1) {
+    // IR triggered first. Do not overwrite dir, next_dir, or turntime.
+    // Only send the RFID data via Bluetooth to notify the system.
+    char btBuffer[80];
+    snprintf(btBuffer, sizeof(btBuffer), "%s", uidString.c_str());
+    Serial3.println(btBuffer);
+  } else {
+    // Normal case: RFID triggered first or perfectly simultaneous with IR.
+    isInnode = 1;  
+    turning = 1;
+    turntime = 0;
+    integral = 0;
+    lastError = 0;
+
+    unsigned long curTime = millis();
+    unsigned long motion_duration = curTime - motion_startTime;
+    
+    dir = next_dir;
+    next_dir = WAIT_FOR_COMMAND;
+
+    char btBuffer[80];
+    snprintf(btBuffer, sizeof(btBuffer), "%s,Tr:%lu,inn,dir:%s",
+             uidString.c_str(), motion_duration, getDirString(dir).c_str());
+    Serial3.println(btBuffer);
+
+    currentSegmentType = 4;
+    trackingData[currentSegmentType].update(motion_duration);
+
+    motion_startTime = curTime;
+  }
 
   // Halt PICC and stop encryption on PCD
   mfrc522->PICC_HaltA();

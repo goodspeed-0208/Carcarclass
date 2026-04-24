@@ -25,6 +25,8 @@ unsigned long nextLoopTime = 0;
 
 const unsigned long total_time = 65000;
 
+String btCommandBuffer = ""; //Bluetooth 用
+
 const int direction_num = 8;
 
 enum Direction {
@@ -100,13 +102,13 @@ public:
 
   int forwardspeed = 150;
   int backwardspeed = forwardspeed;
-  int turnBackSpeed = forwardspeed / 2;
+  int turnBackSpeed = forwardspeed / 1.5;
   int turnOuterSpeed = forwardspeed;
   int turnInnerSpeed = int((turnOuterSpeed - 14) * 0.15) + 14;
   int turnOuterSpeed_back = forwardspeed;
   int turnInnerSpeed_back = 0;
 
-  bool extremeModeOn = false;     // 是否開啟極限模式
+  bool extremeModeOn = true;     // 是否開啟極限模式
   int extremeSpeed = 200;        // 極限直線速度
   unsigned long extremeAccelDelay = 400; // 出彎後延遲 0.4s (400ms) 加速
   unsigned long extremeDecelDelay = 250; // 即將入彎前，離開上個節點 0.25s (250ms) 後減速
@@ -126,6 +128,11 @@ public:
   double maxAcceleration = 512.0 / targetLoopTime;  //11基本上就是沒有最大加速度限制
 
   int motor_error = 3;
+
+  //RFID
+  String visitedUIDs[30]; 
+  int visitedCount = 0;
+  const int MAX_VISITED = 30;
 
   //tracking
   double Kp = 15;
@@ -200,6 +207,7 @@ private:
   bool isInnode = 0;
   bool turning = 0;
   int turntime = 0;
+  int Min_forward_turntime = 20000 / forwardspeed;
   int Min_rightleft_turntime = 40000 / forwardspeed;
   int Min_turnback_turntime = 80000 / forwardspeed;
   int Min_backward_turntime = 800;
@@ -241,6 +249,10 @@ void setup() {
   initBlueTooth();
   mycar.begin();
   Serial3.setTimeout(80);  // Minimize timeout to prevent blocking if '\n' is missing
+  btCommandBuffer.reserve(50);
+
+  lastLoopstartTime = millis(); // 防止setup過久，迴圈一直執行
+  nextLoopTime = lastLoopstartTime + targetLoopTime;
 }
 
 bool test = 0;
@@ -257,6 +269,17 @@ void loop() {
     Serial.println("send msg");
     Serial.println(sendTime);
   }*/
+
+  while (Serial3.available() > 0) {
+    char c = Serial3.read();
+    if (c == '\n') {
+      btCommandBuffer.trim(); 
+      processBluetoothCommand(btCommandBuffer);
+      btCommandBuffer = ""; // 清空準備接下一道指令
+    } else {
+      btCommandBuffer += c;
+    }
+  }
 
   unsigned long currentTime = millis();
 
@@ -287,8 +310,8 @@ void loop() {
       maxLoopDuration = 0;
   }*/
 
-  if (Serial3.available()) {
+  /*if (Serial3.available()) {
     String cmd = Serial3.readStringUntil('\n');
     processBluetoothCommand(cmd);
-  }
+  }*/
 }

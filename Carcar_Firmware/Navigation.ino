@@ -50,7 +50,7 @@ void CarCar::goForward() {
 	target_motor_vL = forwardspeed, target_motor_vR = forwardspeed;
 	if (extremeModeOn) target_motor_vL = extremeSpeed, target_motor_vR = extremeSpeed;
 
-	if (IRsum <= 2 && IRsum >= 1) {
+	if (turntime >= Min_forward_turntime && IRsum <= 2 && IRsum >= 1) {
 		turning = 0;
 		isInnode = 0;
 		lastActionWasTurn = false;
@@ -59,10 +59,10 @@ void CarCar::goForward() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -80,10 +80,10 @@ void CarCar::turnleft() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -101,10 +101,10 @@ void CarCar::turnright() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -122,10 +122,10 @@ void CarCar::turnback() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -151,14 +151,14 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		turningData[dir].update(motion_duration);
+
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,inn,dir:%s",
+		         getDirString(dir).c_str(), motion_duration, curTime - start_time, getDirString(next_dir).c_str());
+		Serial3.println(btBuffer);
 
 		dir = next_dir;
 		next_dir = WAIT_FOR_COMMAND;
-		btMsg += "inn\ndir:" + getDirString(dir);
-		Serial3.println(btMsg);
 
 		motion_startTime = curTime;
 	}
@@ -175,10 +175,10 @@ void CarCar::turnleft_after_backward() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -196,10 +196,10 @@ void CarCar::turnright_after_backward() {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = getDirString(dir) + ":" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
-		btMsg += "outn";
-		Serial3.println(btMsg);
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		         getDirString(dir).c_str(), motion_duration);
+		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
 		next_dir = WAIT_FOR_COMMAND;
@@ -302,12 +302,13 @@ void CarCar::Tracking(int deltaTime) {
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
-		String btMsg = "Tr:" + String(motion_duration) + "\n";
-		btMsg += "runT:" + String(curTime - start_time) + "\n";
 		dir = next_dir;
 		next_dir = WAIT_FOR_COMMAND;
-		btMsg += "inn\ndir:" + getDirString(dir);
-		Serial3.println(btMsg);
+
+		char btBuffer[64];
+		snprintf(btBuffer, sizeof(btBuffer), "Tr:%lu || inn,dir:%s",
+		          motion_duration, getDirString(dir).c_str());
+		Serial3.println(btBuffer);
 
 		trackingData[currentSegmentType].update(motion_duration);
 		motion_startTime = curTime;
@@ -339,10 +340,17 @@ void CarCar::restart() {
 	turntime = 0;
 	//modeState = 0;
 	turning = 1;
+	turntime = Min_forward_turntime;
 	dir = FORWARD;
 	isRunning = 1;
 	lastError = 0;
 	integral = 0;
+
+	// 新增：重設 RFID 紀錄
+  visitedCount = 0;
+  for (int i = 0; i < MAX_VISITED; i++) {
+    visitedUIDs[i] = "";
+  }
 
 	start_time = millis();
 	motion_startTime = start_time;
@@ -442,8 +450,7 @@ void CarCar::run_turn_test(int deltaTime) {
 
 void CarCar::reportData() {
 	// Use CSV format for easy computer parsing
-	String header = F("--- FINAL REPORT ---\nAction,Count,TotalTime(ms),MaxTime(ms),MinTime(ms),AvgTime(ms)");
-	Serial3.println(header);
+	Serial3.println(F("--- FINAL REPORT ---\nAction,Count,TotalTime(ms),MaxTime(ms),MinTime(ms),AvgTime(ms)"));
 
 	delay(50);
 
@@ -454,7 +461,7 @@ void CarCar::reportData() {
 		printMotionData("Track_Accel", trackingData[2]);
 		printMotionData("Track_Decel", trackingData[3]);
 	}
-	if(trackingData[4].count > 0) printMotionData("Track_UTurn", trackingData[4]);
+	if (trackingData[4].count > 0) printMotionData("Track_UTurn", trackingData[4]);
 
 	// Output Turning data for all executed directions
 	for (int i = 0; i < direction_num; i++) {
