@@ -85,8 +85,8 @@ def bfs_directions(adj, start, start_dir, goal):
         node, path, heading = queue.popleft()
 
         if node == goal:
-            #return path
-            return convert_to_commands(path, start_dir)
+            return path
+            #return convert_to_commands(path, start_dir)
 
         if node in visited:
             continue
@@ -101,8 +101,8 @@ def bfs_directions(adj, start, start_dir, goal):
 def move(curpos, dir) :
     if (dir == "north") : curpos -= 1
     elif (dir == "south") : curpos += 1
-    elif (dir == "west") : curpos += column
-    elif (dir == "east") : curpos -= column
+    elif (dir == "west") : curpos += row
+    elif (dir == "east") : curpos -= row
     return curpos
 
 def mask_score(mask, targets) :

@@ -11,21 +11,16 @@ import re
 PORT = 'COM3'
 EXPECTED_NAME = 'HM10_12'
 
-raw_data = pandas.read_csv('cross_maze.csv').values
+raw_data = pandas.read_csv('medium_maze.csv').values
 adj = mybfs.build_adjacency_list(raw_data)
 row = 3
-column = 3
-start = 2
+column = 4
+start = 1
 mybfs.init(row, column, start)
-targets = [4, 6, 8]
-print(adj)
+targets = [7, 9, 10, 12]
+#print(adj)
 
 DIRS = ["north", "east", "south", "west"]
-
-start = 1
-targets = [2, 3, 4, 5, 6]
-lastcommand = "f"
-scoreboard = score.ScoreboardServer("REAL GOODSPEED", "http://140.112.175.18")
 
 # 用 state 來存目前狀態
 state = {
@@ -37,39 +32,41 @@ def senddirmsg(bridge, state):
     curpos = state["curpos"]
     curdir = state["curdir"]
 
-    remaining_time = score.getTime()
-    print(remaining_time)
-    path, start_dir = mydp.getorder(adj, curpos, targets, remaining_time)
+    remaining_time = scoreboard.getTime()
+    print("Time:", remaining_time)
+    path, start_dir = mydp.getorder(adj, curpos, curdir, targets, remaining_time)
     directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
+    commands = mybfs.convert_to_commands(directions, DIRS[curdir])
     if not directions: #find target
         print("ready to get target:", targets[path[0][0]])
-        targets.remove(path[0][0])
+        targets.remove(targets[path[0][0]])
         if (len(targets) == 0) : #end
             print("send:stop")
             bridge.send("Dir:stop\n")
             return
         else :
-            path, start_dir = mydp.getorder(adj, curpos, targets)
+            path, start_dir = mydp.getorder(adj, curpos, curdir, targets, remaining_time)
             directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
-    
+            commands = mybfs.convert_to_commands(directions, DIRS[curdir])
 
-    # directions[0] 是下一步方向
-    command = mybfs.convert_to_commands([curdir] + directions)
 
-    if (last == 'b' and (command[1] == 'r' or command[1] == 'l')):
-        bridge.send("Dir:b" + command[1] + "\n")
-        print("send:b", command[1])
-    else:
-        print("send:", command[1])
-        bridge.send("Dir:" + command[1] + "\n")
-        last = command[1]
+    print("target:", targets[path[0][0]])
+    #if (last == 'b' and (command[0] == 'r' or command[0] == 'l')):
+        #print("send:b", command[0])
+    #else:
+    print("send:", commands[0])
+    bridge.send("Dir:" + commands[0] + "\n")
+        #last = command[0]
 
     # 更新狀態
     state["curpos"] = mybfs.move(curpos, directions[0])
-    state["curdir"] = directions[0]
+    state["curdir"] = DIRS.index(directions[0])
 
     print("new curpos:", state["curpos"])
     print("new curdir:", state["curdir"])
+    #print("targets:", targets)
+
+
 
 def handle_uid(uid) :
     scoreboard.add_UID(uid)
@@ -125,13 +122,15 @@ def main():
         sys.exit(0)
 
     print(f"✨ Ready! Connected to {EXPECTED_NAME}")
+    global scoreboard
+    scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 
     print("start =", start)
+    state["curpos"] = start
+    state["curdir"] = (mydp.getorder(adj, start, -1, targets, scoreboard.getTime()))[1]
+    state["curpos"] = mybfs.move(state["curpos"], DIRS[state["curdir"]])
     print("initial curpos =", state["curpos"])
     print("initial curdir =", state["curdir"])
-    state["curpos"] = start
-    state["curdir"] = (mydp.getorder(adj, start, targets))[1]
-    state["curpos"] = mybfs.move(state["curpos"], state["curdir"])
 
     threading.Thread(
         target=background_listener,

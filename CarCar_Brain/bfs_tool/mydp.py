@@ -86,7 +86,7 @@ def build_cost_table(adj, nodes):
 
     return cost#, sp_parents
 
-def dp_flrb_clean(adj, start, targets, time_limit):
+def dp_flrb_clean(adj, start, start_dir, targets, time_limit):
     nodes = [start] + targets
     n = len(targets)
 
@@ -104,12 +104,16 @@ def dp_flrb_clean(adj, start, targets, time_limit):
         for d2 in range(4):
             best = INF
             best_d1 = None
-
-            for d1 in range(4):
-                c = cost[0][i + 1][d1][d2]
-                if c < best:
-                    best = c
-                    best_d1 = d1
+            if (start_dir == -1) :
+                for d1 in range(4):
+                    c = cost[0][i + 1][d1][d2]
+                    if c < best:
+                        best = c
+                        best_d1 = d1
+            else :
+                best_d1 = start_dir
+                best = cost[0][i + 1][start_dir][d2]
+            
 
             if best < INF:
                 dp[1 << i][i][d2] = best
@@ -180,35 +184,41 @@ def reconstruct_order(parent, best_state):
     path.reverse()
     return path, state[2] # path/ start_dir
 
-def getorder(adj, start, targets, time_limit) :
-    best, best_state, parent = dp_flrb_clean(adj, start, targets, time_limit)
+def getorder(adj, start, start_dir, targets, time_limit) :
+    best, best_state, parent = dp_flrb_clean(adj, start, start_dir, targets, time_limit)
     path, start_dir = reconstruct_order(parent, best_state);
     return path, start_dir
 
 def test():
-    raw_data = pandas.read_csv('cross_maze.csv').values
-    mybfs.init(3, 3, 2)
+    raw_data = pandas.read_csv('medium_maze.csv').values
+    mybfs.init(3, 4, 1)
     adj = mybfs.build_adjacency_list(raw_data)
 
-    targets = [4, 6, 8]
-    start = 2
+    targets = [7, 9, 10, 12]
+    start = 1
     #targets = [1, 6, 7, 12, 19, 24, 30, 31, 36, 43, 45, 48]
     #start = 25
-    best_time, best_state, parent = dp_flrb_clean(adj, start, targets, 100)
+    best_time, best_state, parent = dp_flrb_clean(adj, start, -1, targets, 100)
     print("cost:", best_time)
     print("points:", mybfs.mask_score(best_state[0], targets))
     path, start_dir = reconstruct_order(parent, best_state);
+    path, start_dir = getorder(adj, start, -1, targets, 100)
     print("path: ")
     for (u, d) in path:
         print(targets[u], d)
 
     last, last_dir = path[0]
     print(0, targets[last], DIRS[start_dir], ": ", end = "")
-    print(mybfs.bfs_directions(adj, start, DIRS[start_dir], targets[last]))
+    directions = mybfs.bfs_directions(adj, start, DIRS[start_dir], targets[last])
+    print(mybfs.convert_to_commands(directions, DIRS[start_dir]))
 
     for (i, d) in path[1:]:
         print(targets[last], targets[i], DIRS[last_dir], ": ", end = "")
-        print(mybfs.bfs_directions(adj, targets[last], DIRS[last_dir], targets[i]))
+        directions = mybfs.bfs_directions(adj, targets[last], DIRS[last_dir], targets[i])
+        print(mybfs.convert_to_commands(directions, DIRS[last_dir]))
+        #print(mybfs.bfs_directions(adj, targets[last], DIRS[last_dir], targets[i]))
         last = i
         last_dir = d
+        print("last_dir:", d)
 
+test()
