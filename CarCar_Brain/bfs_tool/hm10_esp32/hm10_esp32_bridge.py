@@ -18,19 +18,36 @@ class HM10ESP32Bridge:
         raw_data = self.ser.read_all().decode('utf-8', errors='ignore')
         self._raw_serial_buffer += raw_data
         
-        # Split by newline to parse ESP32 logs
+        # 切割 ESP32 的 Log
         lines = self._raw_serial_buffer.split('\n')
         self._raw_serial_buffer = lines.pop() 
 
         payloads = []
+        current_payload = None # 用來暫存並接合跨行的藍牙封包
+        
         for line in lines:
             if "bt_com:" in line:
-                payload = line.split("bt_com:", 1)[1]
-                if payload.startswith(" "):
-                    payload = payload[1:]
-                clean_payload = self.ansi_regex.sub('', payload)
-                # DO NOT append \n here. Let the fragments stay as fragments.
-                payloads.append(clean_payload) 
+                # 遇到新的 bt_com:，先把上一個已經組合好的 payload 存進陣列
+                if current_payload is not None:
+                    clean_payload = self.ansi_regex.sub('', current_payload)
+                    payloads.append(clean_payload)
+                
+                # 建立新的 payload
+                current_payload = line.split("bt_com:", 1)[1]
+                if current_payload.startswith(" "):
+                    current_payload = current_payload[1:]
+            else:
+                # 關鍵修復點！
+                # 如果這行沒有 bt_com:，代表它是被 Arduino 的 \n 切斷的封包下半部！
+                # 我們把它跟前面的 payload 黏回去，並補回被 split('\n') 吃掉的 \n
+                if current_payload is not None:
+                    current_payload += '\n' + line
+
+        # 處理迴圈最後一個尚未存入的 payload
+        if current_payload is not None:
+            clean_payload = self.ansi_regex.sub('', current_payload)
+            payloads.append(clean_payload)
+            
         return payloads
 
     def set_hm10_name(self, name, timeout=2.0):
@@ -85,18 +102,19 @@ class HM10ESP32Bridge:
         return False
 
     def listen(self):
-        """Returns completely assembled lines separated by \\r."""
+        """Returns completely assembled lines separated by \r."""
         logs = self._read_bt_com_payloads()
         data_parts = [l for l in logs if not l.startswith("OK+")]
         
         self._rx_buffer += "".join(data_parts)
         
-        # Use \r as the delimiter because Arduino println() sends \r\n,
-        # and the \n was consumed by the ESP32 log parser split('\n')
+        # 你的 Arduino println() 會送出 \r\n
+        # 只要看見 \r，就代表一句完整的話結束了
         if '\r' in self._rx_buffer:
             line, self._rx_buffer = self._rx_buffer.split('\r', 1)
-            # Remove any trailing whitespace or remaining \n
-            return line.strip()
+            
+            # 安全機制：移除殘留的 \n，確保輸出乾淨的字串，而不使用 strip() 以免誤刪你想要的空白
+            return line.replace('\n', '')
             
         return None
 

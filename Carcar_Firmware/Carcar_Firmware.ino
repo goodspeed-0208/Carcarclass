@@ -102,7 +102,7 @@ public:
 
   int forwardspeed = 150;
   int backwardspeed = forwardspeed;
-  int turnBackSpeed = forwardspeed / 1.5;
+  int turnBackSpeed = forwardspeed / 2;
   int turnOuterSpeed = forwardspeed;
   int turnInnerSpeed = int((turnOuterSpeed - 14) * 0.15) + 14;
   int turnOuterSpeed_back = forwardspeed;
@@ -209,7 +209,7 @@ private:
   int turntime = 0;
   int Min_forward_turntime = 20000 / forwardspeed;
   int Min_rightleft_turntime = 40000 / forwardspeed;
-  int Min_turnback_turntime = 80000 / forwardspeed;
+  int Min_turnback_turntime = 70000 / forwardspeed;
   int Min_backward_turntime = 800;
   Direction dir;  // left right forward baackward
   Direction mode[8] = { RIGHT, TURN_BACK, FORWARD, TURN_BACK, LEFT, TURN_BACK, FORWARD, TURN_BACK };
@@ -296,7 +296,7 @@ void loop() {
     //mycar.run_turn_test(deltatime);
 
     //檢查loop花費時間
-    maxLoopDuration = max(maxLoopDuration, millis() - currentTime);
+    //maxLoopDuration = max(maxLoopDuration, millis() - currentTime);
   }
 
   /*if(currentTime >= nextSendTime){
@@ -305,8 +305,11 @@ void loop() {
       Serial.print("max loop duration: ");
       Serial.println(maxLoopDuration);
 
-      Serial3.print("max loop duration: ");
-      Serial3.println(maxLoopDuration);
+      if(maxLoopDuration > 50){
+        Serial3.print("max loop: ");
+        Serial3.println(maxLoopDuration);
+      }
+      
       maxLoopDuration = 0;
   }*/
 

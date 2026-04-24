@@ -53,7 +53,7 @@ void CarCar::readRFID() {
   }
 
 
-  if (turning == 1) {
+  if (turning || !isRunning) {
     // IR triggered first. Do not overwrite dir, next_dir, or turntime.
     // Only send the RFID data via Bluetooth to notify the system.
     char btBuffer[80];

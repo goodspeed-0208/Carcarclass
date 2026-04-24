@@ -32,7 +32,7 @@ void CarCar::navigating(int deltaTime) {
 
 		MotorWriting(deltaTime);
 
-		if (!turning || (turning && dir == FORWARD)) {  //紀錄直行平均速度
+		if (!turning && millis() - motion_startTime >= 180) {  //紀錄直行平均速度
 			trackCount++;
 			sum_vL += last_motor_vL;
 			sum_vR += last_motor_vR;
@@ -65,13 +65,12 @@ void CarCar::goForward() {
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
-		next_dir = WAIT_FOR_COMMAND;
 	}
 }
 
 void CarCar::turnleft() {
 	target_motor_vL = turnInnerSpeed, target_motor_vR = turnOuterSpeed;
-	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+	if (turntime >= Min_rightleft_turntime && (IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3]))) {
 		turning = 0;
 		isInnode = 0;
 		lastActionWasTurn = true;
@@ -86,13 +85,12 @@ void CarCar::turnleft() {
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
-		next_dir = WAIT_FOR_COMMAND;
 	}
 }
 
 void CarCar::turnright() {
 	target_motor_vL = turnOuterSpeed, target_motor_vR = turnInnerSpeed;
-	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+	if (turntime >= Min_rightleft_turntime && (IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3]))) {
 		turning = 0;
 		isInnode = 0;
 		lastActionWasTurn = true;
@@ -107,13 +105,12 @@ void CarCar::turnright() {
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
-		next_dir = WAIT_FOR_COMMAND;
 	}
 }
 
 void CarCar::turnback() {
 	target_motor_vL = turnBackSpeed, target_motor_vR = -turnBackSpeed;
-	if (turntime >= Min_turnback_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+	if (turntime >= Min_turnback_turntime && (IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3]))) {
 		turning = 0;
 		isInnode = 0;
 		lastActionWasTurn = true;
@@ -128,7 +125,6 @@ void CarCar::turnback() {
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
-		next_dir = WAIT_FOR_COMMAND;
 	}
 }
 
@@ -153,12 +149,11 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 		unsigned long motion_duration = curTime - motion_startTime;
 
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,runT:%lu,inn,dir:%s",
-		         getDirString(dir).c_str(), motion_duration, curTime - start_time, getDirString(next_dir).c_str());
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu || inn,dir:%s",
+		         getDirString(dir).c_str(), motion_duration, getDirString(next_dir).c_str());
 		Serial3.println(btBuffer);
 
 		dir = next_dir;
-		next_dir = WAIT_FOR_COMMAND;
 
 		motion_startTime = curTime;
 	}
@@ -166,7 +161,7 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 
 void CarCar::turnleft_after_backward() {
 	target_motor_vL = turnOuterSpeed_back, target_motor_vR = turnInnerSpeed_back;
-	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+	if (turntime >= Min_rightleft_turntime &&(IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3]))) {
 		turning = 0;
 		isInnode = 0;
 		lastActionWasTurn = true;
@@ -181,13 +176,12 @@ void CarCar::turnleft_after_backward() {
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
-		next_dir = WAIT_FOR_COMMAND;
 	}
 }
 
 void CarCar::turnright_after_backward() {
 	target_motor_vL = turnInnerSpeed_back, target_motor_vR = turnOuterSpeed_back;
-	if (turntime >= Min_rightleft_turntime && IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3])) {
+	if (turntime >= Min_rightleft_turntime && (IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3]))) {
 		turning = 0;
 		isInnode = 0;
 		lastActionWasTurn = true;
@@ -202,7 +196,6 @@ void CarCar::turnright_after_backward() {
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
 		motion_startTime = curTime;
-		next_dir = WAIT_FOR_COMMAND;
 	}
 }
 
@@ -220,18 +213,18 @@ void CarCar::wait_for_command() {
 }
 
 void CarCar::Tracking(int deltaTime) {
-	if (IRsum == 0) {  //出軌情況
+	/*if (IRsum == 0) {  //出軌情況
 		target_motor_vL = 0;
 		target_motor_vR = 0;
 
-		last_motor_vL = 0;
+		/*last_motor_vL = 0;
 		last_motor_vR = 0;
 
 		integral = 0;
 		lastError = 0;
 
 		return;
-	}
+	}*/
 
 	double w3 = 2, w2 = 1;
 	double error = 0;
@@ -293,7 +286,7 @@ void CarCar::Tracking(int deltaTime) {
 	if (vL >= 255) vL = 255;
 	if (vR <= -255) vR = -255;
 	if (vL <= -255) vL = -255;
-	if (IRsum >= 4) {  //與讀到RFID同步
+	if (IRsum >= 4 && (next_dir != BACKWARD && next_dir != TURN_BACK && next_dir != STAY_STOP)) {  //與讀到RFID同步
 		isInnode = 1;
 		turning = 1;
 		turntime = 0;
