@@ -90,7 +90,7 @@ def background_listener(bridge, state):
                 uid = match.group(1)
                 print("UID detected:", uid)
 
-                handle_uid(uid, state)
+                handle_uid(uid)
 
 
             

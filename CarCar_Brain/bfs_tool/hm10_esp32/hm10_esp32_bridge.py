@@ -16,9 +16,9 @@ class HM10ESP32Bridge:
         if self.ser.in_waiting == 0:
             return []
         raw_data = self.ser.read_all().decode('utf-8', errors='ignore')
-        self._raw_serial_buffer += raw_data # 將新資料接在後面
+        self._raw_serial_buffer += raw_data
         
-        # 用換行符號切割，保留最後一段可能還沒傳完的碎片
+        # Split by newline to parse ESP32 logs
         lines = self._raw_serial_buffer.split('\n')
         self._raw_serial_buffer = lines.pop() 
 
@@ -29,7 +29,8 @@ class HM10ESP32Bridge:
                 if payload.startswith(" "):
                     payload = payload[1:]
                 clean_payload = self.ansi_regex.sub('', payload)
-                payloads.append(clean_payload + "\n") # 補回被 split 吃掉的換行
+                # DO NOT append \n here. Let the fragments stay as fragments.
+                payloads.append(clean_payload) 
         return payloads
 
     def set_hm10_name(self, name, timeout=2.0):
@@ -84,16 +85,17 @@ class HM10ESP32Bridge:
         return False
 
     def listen(self):
-        """Returns completely assembled lines separated by \\n."""
+        """Returns completely assembled lines separated by \\r."""
         logs = self._read_bt_com_payloads()
         data_parts = [l for l in logs if not l.startswith("OK+")]
         
-        # 把新收到的碎片全部黏到緩衝區尾巴
         self._rx_buffer += "".join(data_parts)
         
-        # 只要緩衝區裡有換行符號，就切出一行完整的回傳
-        if '\n' in self._rx_buffer:
-            line, self._rx_buffer = self._rx_buffer.split('\n', 1)
+        # Use \r as the delimiter because Arduino println() sends \r\n,
+        # and the \n was consumed by the ESP32 log parser split('\n')
+        if '\r' in self._rx_buffer:
+            line, self._rx_buffer = self._rx_buffer.split('\r', 1)
+            # Remove any trailing whitespace or remaining \n
             return line.strip()
             
         return None
