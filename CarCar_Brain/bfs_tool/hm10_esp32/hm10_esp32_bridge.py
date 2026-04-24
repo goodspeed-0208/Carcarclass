@@ -105,7 +105,7 @@ class HM10ESP32Bridge:
         """Returns completely assembled lines separated by \r."""
         logs = self._read_bt_com_payloads()
         data_parts = [l for l in logs if not l.startswith("OK+")]
-        
+
         self._rx_buffer += "".join(data_parts)
         
         # 你的 Arduino println() 會送出 \r\n

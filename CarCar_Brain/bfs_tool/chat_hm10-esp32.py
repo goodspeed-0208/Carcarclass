@@ -18,7 +18,10 @@ column = 4
 start = 1
 mybfs.init(row, column, start)
 targets = [7, 9, 10, 12]
+scoreboard = None
+scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 #print(adj)
+last = None
 
 DIRS = ["north", "east", "south", "west"]
 
@@ -29,10 +32,13 @@ state = {
 }
 
 def senddirmsg(bridge, state):
+    if (len(targets) == 0) : return
     curpos = state["curpos"]
     curdir = state["curdir"]
-
-    remaining_time = scoreboard.getTime()
+    #print("curpos", curpos)
+    #print("curdir", curdir)
+    global scoreboard
+    remaining_time = 70#scoreboard.getTime()
     print("Time:", remaining_time)
     path, start_dir = mydp.getorder(adj, curpos, curdir, targets, remaining_time)
     directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
@@ -48,27 +54,31 @@ def senddirmsg(bridge, state):
             path, start_dir = mydp.getorder(adj, curpos, curdir, targets, remaining_time)
             directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
             commands = mybfs.convert_to_commands(directions, DIRS[curdir])
-
-
+    if (commands[0] == 'b') :
+        if (len(commands) >= 1 and commands[1] == 'f') :
+            commands = "t"
+    global last
     print("target:", targets[path[0][0]])
-    #if (last == 'b' and (command[0] == 'r' or command[0] == 'l')):
-        #print("send:b", command[0])
-    #else:
-    print("send:", commands[0])
-    bridge.send("Dir:" + commands[0] + "\n")
-        #last = command[0]
-
+    if (last == 'b' and (commands[0] == 'r' or commands[0] == 'l')):
+        print("send:b", commands[0])
+        bridge.send("Dir:"+commands[0]+"b\n")
+    else:
+        print("send:", commands[0])
+        bridge.send("Dir:" + commands[0] + "\n")
+        
+    last = commands[0]
     # 更新狀態
     state["curpos"] = mybfs.move(curpos, directions[0])
     state["curdir"] = DIRS.index(directions[0])
 
-    print("new curpos:", state["curpos"])
-    print("new curdir:", state["curdir"])
+    #print("new curpos:", state["curpos"])
+    #print("new curdir:", state["curdir"])
     #print("targets:", targets)
 
 
 
 def handle_uid(uid) :
+    global scoreboard
     scoreboard.add_UID(uid)
     print("get_UID:", uid)
 
@@ -82,7 +92,7 @@ def background_listener(bridge, state):
                 
             print(f"[HM10]: {msg}")
 
-            if "outn" in msg:
+            if "inn" in msg:
                 senddirmsg(bridge, state)
             
             match = re.search(r"uid:\s*([0-9A-Fa-f]{8})", msg)
@@ -122,12 +132,10 @@ def main():
         sys.exit(0)
 
     print(f"✨ Ready! Connected to {EXPECTED_NAME}")
-    global scoreboard
-    scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 
     print("start =", start)
     state["curpos"] = start
-    state["curdir"] = (mydp.getorder(adj, start, -1, targets, scoreboard.getTime()))[1]
+    state["curdir"] = (mydp.getorder(adj, start, -1, targets, 65))[1]
     state["curpos"] = mybfs.move(state["curpos"], DIRS[state["curdir"]])
     print("initial curpos =", state["curpos"])
     print("initial curdir =", state["curdir"])
@@ -158,4 +166,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
