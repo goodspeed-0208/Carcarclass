@@ -74,7 +74,7 @@ void CarCar::readRFID() {
     next_dir = WAIT_FOR_COMMAND;
 
     char btBuffer[80];
-    snprintf(btBuffer, sizeof(btBuffer), "%s,Tr:%lu,inn,dir:%s",
+    snprintf(btBuffer, sizeof(btBuffer), "%s,Tr:%lu,INN,dir:%s",
              uidString.c_str(), motion_duration, getDirString(dir).c_str());
     Serial3.println(btBuffer);
 

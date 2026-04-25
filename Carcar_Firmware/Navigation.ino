@@ -60,7 +60,7 @@ void CarCar::goForward() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,OUTN",
 		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -80,7 +80,7 @@ void CarCar::turnleft() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,OUTN",
 		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -100,7 +100,7 @@ void CarCar::turnright() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,OUTN",
 		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -120,7 +120,7 @@ void CarCar::turnback() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,OUTN",
 		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -129,10 +129,10 @@ void CarCar::turnback() {
 }
 
 void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功能尚不齊全
-	target_motor_vL = -averagevL, target_motor_vR = -averagevR;
+	target_motor_vL = -forwardspeed, target_motor_vR = -forwardspeed;
 	if (isInnode && IRsum <= 2) {
 		isInnode = 0;
-		String btMsg = "outn";
+		String btMsg = "OUTN";
 		Serial3.println(btMsg);
 	}
 	if (turntime >= Min_backward_turntime && !isInnode && IRsum >= 4) {
@@ -149,7 +149,7 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 		unsigned long motion_duration = curTime - motion_startTime;
 
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu || inn,dir:%s",
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu || INN,dir:%s",
 		         getDirString(dir).c_str(), motion_duration, getDirString(next_dir).c_str());
 		Serial3.println(btBuffer);
 
@@ -171,7 +171,7 @@ void CarCar::turnleft_after_backward() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,OUTN",
 		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -191,7 +191,7 @@ void CarCar::turnright_after_backward() {
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,outn",
+		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu,OUTN",
 		         getDirString(dir).c_str(), motion_duration);
 		Serial3.println(btBuffer);
 		turningData[dir].update(motion_duration);
@@ -286,6 +286,7 @@ void CarCar::Tracking(int deltaTime) {
 	if (vL >= 255) vL = 255;
 	if (vR <= -255) vR = -255;
 	if (vL <= -255) vL = -255;
+
 	if (IRsum >= 4 && (next_dir != BACKWARD && next_dir != TURN_BACK && next_dir != STAY_STOP)) {  //與讀到RFID同步
 		isInnode = 1;
 		turning = 1;

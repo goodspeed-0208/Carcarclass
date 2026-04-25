@@ -39,7 +39,7 @@ def senddirmsg(bridge, state):
     #print("curdir", curdir)
     global scoreboard
     remaining_time = 70#scoreboard.getTime()
-    print("Time:", remaining_time)
+    print("Remaining time:", remaining_time)
     path, start_dir = mydp.getorder(adj, curpos, curdir, targets, remaining_time)
     directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
     commands = mybfs.convert_to_commands(directions, DIRS[curdir])
@@ -55,7 +55,7 @@ def senddirmsg(bridge, state):
             directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
             commands = mybfs.convert_to_commands(directions, DIRS[curdir])
     if (commands[0] == 'b') :
-        if (len(commands) >= 1 and commands[1] == 'f') :
+        if (len(commands) > 1 and commands[1] == 'f') :
             commands = "t"
     global last
     print("target:", targets[path[0][0]])
@@ -90,9 +90,9 @@ def background_listener(bridge, state):
             if not msg:
                 break # 沒有完整的行了，跳出內圈去睡覺
                 
-            print(f"[HM10]: {msg}")
+            print(f"{msg}") #[HM10]:
 
-            if "inn" in msg:
+            if "INN" in msg:
                 senddirmsg(bridge, state)
             
             match = re.search(r"uid:\s*([0-9A-Fa-f]{8})", msg)
@@ -148,7 +148,7 @@ def main():
 
     try:
         while True:
-            user_msg = input("You: ")
+            user_msg = input("YOU: ")
             if user_msg.lower() in ['exit', 'quit']:
                 break
 

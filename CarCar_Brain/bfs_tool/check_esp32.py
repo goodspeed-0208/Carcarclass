@@ -36,7 +36,7 @@ def senddirmsg(state):
     curdir = state["curdir"]
 
     remaining_time = scoreboard.getTime()
-    print("Time:", remaining_time)
+    print("Remaining time:", remaining_time)
     path, start_dir = mydp.getorder(adj, curpos, curdir, targets, remaining_time)
     directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
     commands = mybfs.convert_to_commands(directions, DIRS[curdir])
