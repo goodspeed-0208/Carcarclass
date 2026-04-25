@@ -52,6 +52,8 @@ void CarCar::readRFID() {
     visitedCount++;
   }
 
+  isFindingRFID = false;
+
 
   if (turning || !isRunning) {
     // IR triggered first. Do not overwrite dir, next_dir, or turntime.

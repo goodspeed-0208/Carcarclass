@@ -207,11 +207,6 @@ void processBluetoothCommand(String command) {
     // Call restart to set isRunning = 1 and reset parameters
     mycar.restart();
 
-    // Print to USB Serial monitor for debugging
-    Serial.print("Calibration started. Speed: ");
-    Serial.print(mycar.forwardspeed);
-    Serial.print(" | Error: ");
-    Serial.println(mycar.motor_error);
 
     // Send to Bluetooth terminal via Serial3
     Serial3.print("Calibration started. Speed: ");

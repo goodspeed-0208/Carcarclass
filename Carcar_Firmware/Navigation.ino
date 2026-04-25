@@ -109,8 +109,12 @@ void CarCar::turnright() {
 }
 
 void CarCar::turnback() {
-	target_motor_vL = turnBackSpeed, target_motor_vR = -turnBackSpeed;
-	if (turntime >= Min_turnback_turntime && (IRisBlack[0] == 0 && IRisBlack[4] == 0 && (IRisBlack[2] || IRisBlack[1] || IRisBlack[3]))) {
+	target_motor_vL = turnBackSpeed_first, target_motor_vR = -turnBackSpeed_first;
+	if(turntime >= Min_turnback_turntime){
+		target_motor_vL = turnBackSpeed_second;
+		target_motor_vR = -turnBackSpeed_second;
+	}
+	if (turntime >= Min_turnback_turntime && (!IRisBlack[0] && (IRisBlack[1] || IRisBlack[2] || IRisBlack[3] || IRisBlack[4]))) {
 		turning = 0;
 		isInnode = 0;
 		lastActionWasTurn = true;
@@ -152,6 +156,8 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 		snprintf(btBuffer, sizeof(btBuffer), "%s:%lu || INN,dir:%s",
 		         getDirString(dir).c_str(), motion_duration, getDirString(next_dir).c_str());
 		Serial3.println(btBuffer);
+
+		turningData[dir].update(motion_duration);
 
 		dir = next_dir;
 
@@ -287,7 +293,13 @@ void CarCar::Tracking(int deltaTime) {
 	if (vR <= -255) vR = -255;
 	if (vL <= -255) vL = -255;
 
-	if (IRsum >= 4 && (next_dir != BACKWARD && next_dir != TURN_BACK && next_dir != STAY_STOP)) {  //與讀到RFID同步
+	if(IRsum >= 4 && !isFindingRFID && (next_dir == BACKWARD || next_dir == TURN_BACK || next_dir == STAY_STOP)){
+		isFindingRFID = true;
+		RFID_startTime = millis();
+	}
+
+	if (IRsum >= 4 && ((next_dir != BACKWARD && next_dir != TURN_BACK && next_dir != STAY_STOP) || (isFindingRFID && millis() >= RFID_startTime + Max_RFID_findtime))) {  //與讀到RFID同步
+		isFindingRFID = false;
 		isInnode = 1;
 		turning = 1;
 		turntime = 0;
@@ -348,7 +360,7 @@ void CarCar::restart() {
 
 	start_time = millis();
 	motion_startTime = start_time;
-	for (int i = 0; i < 4; i++) trackingData[i].reset();
+	for (int i = 0; i < 5; i++) trackingData[i].reset();
 	for (int i = 0; i < direction_num; i++) turningData[i].reset();
 }
 
@@ -357,8 +369,8 @@ void CarCar::adjust_motor_error(int deltatime) {  //根據目前的速度與差�
 		target_motor_vL = 0;
 		target_motor_vR = 0;
 	} else {
-		target_motor_vL = forwardspeed;
-		target_motor_vR = forwardspeed;
+		target_motor_vL = -forwardspeed;
+		target_motor_vR = -forwardspeed;
 		if (IRsum >= 4) {
 			int current_adjust_time = millis() - adjust_start_time;
 			if (!adjust_start) {

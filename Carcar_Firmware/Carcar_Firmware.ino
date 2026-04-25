@@ -96,13 +96,16 @@ public:
   void printMotionData(String actionName, MotionData data);
 
   void reading();
+  void readIR();
+  void readRFID();
   void navigating(int deltaTime);
   void adjust_motor_error(int deltaTime);
 
 
-  int forwardspeed = 150;
+  int forwardspeed = 160;
   int backwardspeed = forwardspeed;
-  int turnBackSpeed = forwardspeed / 2;
+  int turnBackSpeed_first = 200;
+  int turnBackSpeed_second = 160;
   int turnOuterSpeed = forwardspeed;
   int turnInnerSpeed = int((turnOuterSpeed - 14) * 0.15) + 14;
   int turnOuterSpeed_back = forwardspeed;
@@ -110,8 +113,8 @@ public:
 
   bool extremeModeOn = true;     // 是否開啟極限模式
   int extremeSpeed = 200;        // 極限直線速度
-  unsigned long extremeAccelDelay = 400; // 出彎後延遲 0.4s (400ms) 加速
-  unsigned long extremeDecelDelay = 250; // 即將入彎前，離開上個節點 0.25s (250ms) 後減速
+  unsigned long extremeAccelDelay = 250; // 出彎後延遲 0.4s (400ms) 加速
+  unsigned long extremeDecelDelay = 300; // 即將入彎前，離開上個節點 0.25s (250ms) 後減速
 
   bool lastActionWasTurn = true; // 紀錄上一個動作是否為轉彎 (開局預設為 true 比較安全)
   bool lastActionWasUTurn = false;
@@ -165,9 +168,6 @@ private:
   void initRFID();
   void initMotor();
 
-  void readIR();
-  void readRFID();
-
   void goForward();
   void turnleft();
   void turnright();
@@ -187,7 +187,9 @@ private:
   int RFID_SS_PIN = SS_PIN;
   int RFID_RST_PIN = RST_PIN;
   MFRC522 *mfrc522;
-
+  bool isFindingRFID = false;
+  unsigned long RFID_startTime = 0;
+  unsigned long Max_RFID_findtime = 500;
   //IR
   int IRvalue[analognum] = { 0, 0, 0, 0, 0 };
   bool IRisBlack[analognum] = { 0, 0, 0, 0, 0 };
@@ -207,10 +209,10 @@ private:
   bool isInnode = 0;
   bool turning = 0;
   int turntime = 0;
-  int Min_forward_turntime = 20000 / forwardspeed;
-  int Min_rightleft_turntime = 40000 / forwardspeed;
-  int Min_turnback_turntime = 70000 / forwardspeed;
-  int Min_backward_turntime = 800;
+  int Min_forward_turntime = 15000 / forwardspeed;
+  int Min_rightleft_turntime = 60000 / turnOuterSpeed;
+  int Min_turnback_turntime = 97500 / turnBackSpeed_first;
+  int Min_backward_turntime = 120000 / forwardspeed;
   Direction dir;  // left right forward baackward
   Direction mode[8] = { RIGHT, TURN_BACK, FORWARD, TURN_BACK, LEFT, TURN_BACK, FORWARD, TURN_BACK };
   int modeState = 0;
@@ -218,7 +220,7 @@ private:
   //data
   unsigned long start_time = 0;
   unsigned long motion_startTime = 0;
-  MotionData trackingData[5];
+  MotionData trackingData[6];
   MotionData turningData[direction_num];
 
 
@@ -283,6 +285,8 @@ void loop() {
 
   unsigned long currentTime = millis();
 
+  mycar.readRFID();
+
   if (currentTime >= nextLoopTime) {
     unsigned long deltatime = currentTime - lastLoopstartTime;
     lastLoopstartTime = currentTime;
@@ -290,9 +294,9 @@ void loop() {
     // 設定下一次執行目標時間
     nextLoopTime += targetLoopTime;
 
-    mycar.reading();
-    mycar.navigating(deltatime);
-    //mycar.adjust_motor_error(deltatime);
+    mycar.readIR();
+    //mycar.navigating(deltatime);
+    mycar.adjust_motor_error(deltatime);
     //mycar.run_turn_test(deltatime);
 
     //檢查loop花費時間
