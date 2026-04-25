@@ -300,7 +300,7 @@ void CarCar::Tracking(int deltaTime) {
 		next_dir = WAIT_FOR_COMMAND;
 
 		char btBuffer[64];
-		snprintf(btBuffer, sizeof(btBuffer), "Tr:%lu || inn,dir:%s",
+		snprintf(btBuffer, sizeof(btBuffer), "Tr:%lu || INN,dir:%s",
 		          motion_duration, getDirString(dir).c_str());
 		Serial3.println(btBuffer);
 

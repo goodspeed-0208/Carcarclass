@@ -29,6 +29,11 @@ class HM10ESP32Bridge:
             if "bt_com:" in line:
                 # 遇到新的 bt_com:，先把上一個已經組合好的 payload 存進陣列
                 if current_payload is not None:
+                    # 🌟 關鍵修復：只把字串最尾巴 (屬於 ESP32 系統包裝) 的 \r 拔掉！
+                    # 這樣能完美保留包在字串中間、屬於 Arduino 真正的 \r
+                    if current_payload.endswith('\r'):
+                        current_payload = current_payload[:-1]
+                        
                     clean_payload = self.ansi_regex.sub('', current_payload)
                     payloads.append(clean_payload)
                 
@@ -37,14 +42,16 @@ class HM10ESP32Bridge:
                 if current_payload.startswith(" "):
                     current_payload = current_payload[1:]
             else:
-                # 關鍵修復點！
-                # 如果這行沒有 bt_com:，代表它是被 Arduino 的 \n 切斷的封包下半部！
-                # 我們把它跟前面的 payload 黏回去，並補回被 split('\n') 吃掉的 \n
+                # 把被 Arduino \n 切斷的封包下半部黏回來
                 if current_payload is not None:
                     current_payload += '\n' + line
 
         # 處理迴圈最後一個尚未存入的 payload
         if current_payload is not None:
+            # 🌟 關鍵修復：同樣處理最後一筆的尾巴 \r
+            if current_payload.endswith('\r'):
+                current_payload = current_payload[:-1]
+                
             clean_payload = self.ansi_regex.sub('', current_payload)
             payloads.append(clean_payload)
             
