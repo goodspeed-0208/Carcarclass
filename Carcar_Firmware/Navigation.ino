@@ -256,8 +256,10 @@ void CarCar::Tracking(int deltaTime) {
 	if (extremeModeOn) {
 		// 如果 next_dir 已經是 FORWARD，代表未來要直走
 		bool willGoStraight = (next_dir == FORWARD);
+		bool willReadCard = (next_dir == BACKWARD || next_dir == TURN_BACK || next_dir == STAY_STOP);
 
-		if (lastActionWasUTurn) currentSegmentType = 4;                          //迴轉 -> 直走 (距離短)
+		if (willReadCard) currentSegmentType = 4;
+		else if (lastActionWasUTurn) currentSegmentType = 5;                     //迴轉 -> 直走 (距離短)
 		else if (lastActionWasTurn && !willGoStraight) currentSegmentType = 0;   // 轉彎 -> 轉彎 (一般150)
 		else if (!lastActionWasTurn && willGoStraight) currentSegmentType = 1;   // 直走 -> 直走 (極限200)
 		else if (lastActionWasTurn && willGoStraight) currentSegmentType = 2;    // 轉彎 -> 直走 (加速段)
@@ -272,6 +274,12 @@ void CarCar::Tracking(int deltaTime) {
 		} else if (currentSegmentType == 3) {  // 減速段
 			if (timeSinceLastNode < extremeDecelDelay) currentBaseSpeed = extremeSpeed;
 		} else if (currentSegmentType == 4) {
+			unsigned long curTime = millis();
+			unsigned long motion_duration = curTime - motion_startTime;
+			if(motion_duration >= inUturnDecelTime){
+				currentBaseSpeed = inUturnSpeed_decel;
+			}
+		} else if (currentSegmentType == 5) {
 			// 【迴轉恢復段的速度策略】
 			// 因為迴轉後車身最不穩，這裡我們預設「不加速」，整段用 150 穩穩走完。
 			// 所以我們什麼都不用寫，它會自然保持在預設的 currentBaseSpeed = 150
@@ -360,7 +368,7 @@ void CarCar::restart() {
 
 	start_time = millis();
 	motion_startTime = start_time;
-	for (int i = 0; i < 5; i++) trackingData[i].reset();
+	for (int i = 0; i < 6; i++) trackingData[i].reset();
 	for (int i = 0; i < direction_num; i++) turningData[i].reset();
 }
 
@@ -467,7 +475,8 @@ void CarCar::reportData() {
 		printMotionData("Track_Accel", trackingData[2]);
 		printMotionData("Track_Decel", trackingData[3]);
 	}
-	if (trackingData[4].count > 0) printMotionData("Track_UTurn", trackingData[4]);
+	if (trackingData[4].count > 0) printMotionData("Track_UTurn_in", trackingData[4]);
+	if (trackingData[5].count > 0) printMotionData("Track_UTurn_out", trackingData[5]);
 
 	// Output Turning data for all executed directions
 	for (int i = 0; i < direction_num; i++) {

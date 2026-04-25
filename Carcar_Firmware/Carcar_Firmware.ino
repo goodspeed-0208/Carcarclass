@@ -116,6 +116,9 @@ public:
   unsigned long extremeAccelDelay = 250; // 出彎後延遲 0.4s (400ms) 加速
   unsigned long extremeDecelDelay = 300; // 即將入彎前，離開上個節點 0.25s (250ms) 後減速
 
+  unsigned long inUturnDecelTime = 57000 / forwardspeed;
+  int inUturnSpeed_decel = 120;
+
   bool lastActionWasTurn = true; // 紀錄上一個動作是否為轉彎 (開局預設為 true 比較安全)
   bool lastActionWasUTurn = false;
   int currentSegmentType = 0; //這次的直走類型是甚麼
