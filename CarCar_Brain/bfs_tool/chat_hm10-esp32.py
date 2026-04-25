@@ -17,7 +17,7 @@ row = 3
 column = 4
 start = 1
 mybfs.init(row, column, start)
-targets = [7, 9, 10, 12]
+targets = [ 7,9,10, 12]
 scoreboard = None
 scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 #print(adj)

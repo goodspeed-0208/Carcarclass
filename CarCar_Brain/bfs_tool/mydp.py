@@ -9,7 +9,7 @@ COST = {
     "f": 1,
     "l": 1.2,
     "r": 1.2,
-    "b": 1.4
+    "b": 1.6
 }
 
 def turn_cost(prev, curr):
