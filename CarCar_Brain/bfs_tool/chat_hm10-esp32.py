@@ -53,8 +53,19 @@ def senddirmsg(bridge, state):
     print("dir:", directions)
     commands = mybfs.convert_to_commands(directions, DIRS[curdir])
     if not directions: #find target
-        #global scoreboard
-        remaining_time = 70#scoreboard.getTime()
+        global scoreboard
+        
+        # Default time in case of network failure or uninitialized scoreboard
+        remaining_time = 65 
+        
+        if scoreboard is not None:
+            try:
+                # Attempt to fetch dynamic time
+                remaining_time = scoreboard.getTime()
+            except Exception as e:
+                # Catch any connection errors and print a warning
+                print(f"[Warning] Cannot fetch time, using default: {e}")
+                
         print("Remaining time:", remaining_time)
         print("ready to get target:", next_target)
         targets.remove(next_target)
@@ -155,7 +166,7 @@ def main():
     print("start =", start)
     state["curpos"] = start
 
-    best_time, path, start_dir = mydp_new.getorder(adj, start, -1, None, targets, 10000)#scoreboard.getTime())
+    '''best_time, path, start_dir = mydp_new.getorder(adj, start, -1, None, targets, scoreboard.getTime())#scoreboard.getTime())
     print("start_dir", start_dir)
     print("EXPECTED_TIME", best_time)
     global next_target
@@ -164,7 +175,7 @@ def main():
     state["curpos"] = mybfs.move(start, directions[0])
     state["curdir"] = DIRS.index(directions[0])
     global lastmove
-    lastmove = "f"
+    lastmove = "f"'''
 
     print("initial curpos =", state["curpos"])
     print("initial curdir =", state["curdir"])
@@ -182,11 +193,29 @@ def main():
             if user_msg.lower() in ['exit', 'quit']:
                 break
 
-            if user_msg:
-                bridge.send(user_msg + "\n")
-
             if user_msg == "s":
+                if scoreboard is None:
+                    # Connect to server and initialize path
+                    global next_target, lastmove
+                    scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
+                    best_time, path, start_dir = mydp_new.getorder(adj, start, -1, None, targets, scoreboard.getTime())
+                    
+                    bridge.send(user_msg + "\n")
+
+                    next_target = targets[path[0][0]]
+                    directions = mybfs.bfs_directions(adj, start, DIRS[start_dir], next_target)
+                    state["curpos"] = mybfs.move(start, directions[0])
+                    state["curdir"] = DIRS.index(directions[0])
+                    lastmove = "f"
+                else:
+                    bridge.send(user_msg + "\n")
+                
+                # Start the car after connection is confirmed
+                
                 senddirmsg(bridge, state)
+                
+            elif user_msg:
+                bridge.send(user_msg + "\n")
 
     except (KeyboardInterrupt, EOFError):
         pass
