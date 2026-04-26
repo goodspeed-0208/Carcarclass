@@ -20,7 +20,7 @@ void CarCar::readRFID() {
   }
 
   // Print full details to the USB Serial monitor for local debugging
-  Serial.println(F("**Card Detected:**"));
+  //Serial.println(F("**Card Detected:**"));
   mfrc522->PICC_DumpDetailsToSerial(&(mfrc522->uid));
 
   // Pack the UID into a single string for Bluetooth transmission

@@ -266,7 +266,7 @@ def test():
     start = 25
 
     start_move = None
-    best_time, path, start_dir = getorder(adj, start, -1, start_move, targets, 65)
+    best_time, path, start_dir = getorder(adj, start, -1, start_move, targets, 60)
 
     last, last_dir = path[0]
 

@@ -15,7 +15,8 @@ void CarCar::navigating(int deltaTime) {
 					stop(deltaTime);
 					reportData();
 				}
-			} else if (dir == LEFT) turnleft();
+			}
+			else if (dir == LEFT) turnleft();
 			else if (dir == RIGHT) turnright();
 			else if (dir == FORWARD) goForward();
 			else if (dir == TURN_BACK) turnback();
@@ -32,7 +33,7 @@ void CarCar::navigating(int deltaTime) {
 
 		MotorWriting(deltaTime);
 
-		if (!turning && millis() - motion_startTime >= 180) {  //紀錄直行平均速度
+		/*if (!turning && millis() - motion_startTime >= 180) {  //紀錄直行平均速度
 			trackCount++;
 			sum_vL += last_motor_vL;
 			sum_vR += last_motor_vR;
@@ -42,7 +43,7 @@ void CarCar::navigating(int deltaTime) {
 			sum_vL = 0;
 			sum_vR = 0;
 			trackCount = 0;
-		}
+		}*/
 	}
 }
 
@@ -55,7 +56,7 @@ void CarCar::goForward() {
 		isInnode = 0;
 		lastActionWasTurn = false;
 		lastActionWasUTurn = false;
-		modeState = (modeState + 1) % 8;
+		//modeState = (modeState + 1) % 8;
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
@@ -75,7 +76,7 @@ void CarCar::turnleft() {
 		isInnode = 0;
 		lastActionWasTurn = true;
 		lastActionWasUTurn = false;
-		modeState = (modeState + 1) % 8;
+		//modeState = (modeState + 1) % 8;
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
@@ -95,7 +96,7 @@ void CarCar::turnright() {
 		isInnode = 0;
 		lastActionWasTurn = true;
 		lastActionWasUTurn = false;
-		modeState = (modeState + 1) % 8;
+		//modeState = (modeState + 1) % 8;
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
@@ -119,7 +120,7 @@ void CarCar::turnback() {
 		isInnode = 0;
 		lastActionWasTurn = true;
 		lastActionWasUTurn = true;
-		modeState = (modeState + 1) % 8;
+		//modeState = (modeState + 1) % 8;
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
@@ -147,10 +148,10 @@ void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功
 		isInnode = 1;
 		lastActionWasTurn = true;
 		lastActionWasUTurn = false;
-		modeState = (modeState + 1) % 8;
-		sum_vL = 0;
-		sum_vR = 0;
-		trackCount = 0;
+		//modeState = (modeState + 1) % 8;
+		//sum_vL = 0;
+		//sum_vR = 0;
+		//trackCount = 0;
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
@@ -175,7 +176,7 @@ void CarCar::turnleft_after_backward() {
 		isInnode = 0;
 		lastActionWasTurn = true;
 		lastActionWasUTurn = false;
-		modeState = (modeState + 1) % 8;
+		//modeState = (modeState + 1) % 8;
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
@@ -195,7 +196,7 @@ void CarCar::turnright_after_backward() {
 		isInnode = 0;
 		lastActionWasTurn = true;
 		lastActionWasUTurn = false;
-		modeState = (modeState + 1) % 8;
+		//modeState = (modeState + 1) % 8;
 
 		unsigned long curTime = millis();
 		unsigned long motion_duration = curTime - motion_startTime;
@@ -246,7 +247,7 @@ void CarCar::Tracking(int deltaTime) {
 		dt = 50;
 		lastError = error;
 	}
-	integral += error * dt;
+	//integral += error * dt;
 	double derivative = (error - lastError) / dt;
 	//double correction = Kp * error + Ki * integral + Kd * derivative;
 	//int powerCorrection = (int)(correction * forwardspeed);
@@ -375,7 +376,7 @@ void CarCar::restart() {
 	for (int i = 0; i < direction_num; i++) turningData[i].reset();
 }
 
-void CarCar::adjust_motor_error(int deltatime) {  //根據目前的速度與差值走直線，不做tracking
+/*void CarCar::adjust_motor_error(int deltatime) {  //根據目前的速度與差值走直線，不做tracking
 	if (!isRunning) {
 		target_motor_vL = 0;
 		target_motor_vR = 0;
@@ -396,9 +397,9 @@ void CarCar::adjust_motor_error(int deltatime) {  //根據目前的速度與差�
 	}
 
 	MotorWriting(deltatime);
-}
+}*/
 
-void CarCar::start_turn_test(char dir, int outer, float ratio) {
+/*void CarCar::start_turn_test(char dir, int outer, float ratio) {
 	testDir = dir;
 	testOuterSpeed = outer;
 	testInnerSpeed = outer * ratio;  // Calculate inner speed safely
@@ -463,7 +464,7 @@ void CarCar::run_turn_test(int deltaTime) {
 
 	// Always execute motor writing to maintain Slew Rate Limiting
 	MotorWriting(deltaTime);
-}
+}*/
 
 void CarCar::reportData() {
 	// Use CSV format for easy computer parsing
@@ -474,12 +475,10 @@ void CarCar::reportData() {
 	delay(50);
 
 	// Output Tracking data
-	printMotionData("Track_150", trackingData[0]);
-	if (extremeModeOn) {
-		printMotionData("Track_200", trackingData[1]);
-		printMotionData("Track_Accel", trackingData[2]);
-		printMotionData("Track_Decel", trackingData[3]);
-	}
+	if (trackingData[0].count > 0) printMotionData("Track_150", trackingData[0]);
+	if (trackingData[1].count > 0) printMotionData("Track_200", trackingData[1]);
+	if (trackingData[2].count > 0) printMotionData("Track_Accel", trackingData[2]);
+	if (trackingData[3].count > 0) printMotionData("Track_Decel", trackingData[3]);
 	if (trackingData[4].count > 0) printMotionData("Track_UTurn_in", trackingData[4]);
 	if (trackingData[5].count > 0) printMotionData("Track_UTurn_out", trackingData[5]);
 

@@ -118,7 +118,7 @@ bool waitForResponse(const char* expected, unsigned long timeout) {
 }
 
 void processBluetoothCommand(String command) {
-  Serial.println(command);
+  //Serial.println(command);
 
   /*if (command.startsWith("L ") || command.startsWith("R ")) {
     char dir = command.charAt(0);
@@ -162,9 +162,10 @@ void processBluetoothCommand(String command) {
       // Optional: Handle unexpected input to prevent undefined behavior
       Serial3.println("the command is nonsense.");
     }
+    return;
   }
 
-  if (command.startsWith("P ")) {
+  /*if (command.startsWith("P ")) {
     mycar.Kp = command.substring(2).toFloat();  // Update Kp dynamically
     Serial3.print("Kp set to: ");
     Serial3.println(mycar.Kp);
@@ -186,17 +187,20 @@ void processBluetoothCommand(String command) {
     mycar.exKd = command.substring(3).toFloat();  // Update Kd dynamically
     Serial3.print("exKd set to: ");
     Serial3.println(mycar.exKd);
-  }
+  }*/
 
-  if (command == "receive init") {
+  /*if (command == "receive init") {
     // sendTime is a global variable in the main tab
     Serial.print(millis() - sendTime);
     Serial3.println(millis() - sendTime);
-  } else if (command == "e") {
+  }*/
+  if (command == "e") {
     mycar.stop();
+    return;
   } else if (command == "s") {
     mycar.restart();
-  } else if (command.indexOf(' ') != -1) {
+    return;
+  } /*else if (command.indexOf(' ') != -1) {
     mycar.adjust_start = 0;
     int spaceIndex = command.indexOf(' ');
 
@@ -213,5 +217,5 @@ void processBluetoothCommand(String command) {
     Serial3.print(mycar.forwardspeed);
     Serial3.print(" | Error: ");
     Serial3.println(mycar.motor_error);
-  }
+  }*/
 }
