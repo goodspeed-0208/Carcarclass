@@ -11,7 +11,7 @@ import os
 
 if not os.path.exists("running_data"):
     os.makedirs("running_data")
-LOG_FILE = f"running_data/run_{time.strftime('%m%d_%H%M%S')}.txt"
+LOG_FILE = f"CarCar_Brain/bfs_tool/running_data/run_{time.strftime('%m%d_%H%M%S')}.txt"
 
 PORT = 'COM3'
 EXPECTED_NAME = 'HM10_12'
@@ -22,7 +22,7 @@ row = 3
 column = 4
 start = 1
 mybfs.init(row, column, start)
-targets = [ 7,9,10, 12]
+targets = [ 9,10, 12]
 scoreboard = None
 scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 #print(adj)

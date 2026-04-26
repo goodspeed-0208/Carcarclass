@@ -3,3 +3,4 @@ numpy
 pyserial
 requests
 pandas
+openpyxl
