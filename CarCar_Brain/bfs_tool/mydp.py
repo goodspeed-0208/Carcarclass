@@ -221,4 +221,4 @@ def test():
         last_dir = d
         print("last_dir:", d)
 
-test()
+#test()
