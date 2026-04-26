@@ -20,7 +20,6 @@ start = 1
 mybfs.init(row, column, start)
 targets = [ 7,9,10, 12]
 scoreboard = None
-scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 #print(adj)
 last = None
 
@@ -41,15 +40,15 @@ def senddirmsg(bridge, state):
     curdir = state["curdir"]
     #print("curpos", curpos)
     #print("curdir", curdir)
-    global scoreboard
-    remaining_time = scoreboard.getTime()
-    print("Remaining time:", remaining_time)
     global lastmove
     global next_target
 
     directions = mybfs.bfs_directions(adj, curpos, DIRS[curdir], next_target)
     commands = mybfs.convert_to_commands(directions, DIRS[curdir])
     if not directions: #find target
+        global scoreboard
+        remaining_time = scoreboard.getTime()
+        print("Remaining time:", remaining_time)
         print("ready to get target:", next_target)
         targets.remove(next_target)
         if (len(targets) == 0) : #end
@@ -156,7 +155,7 @@ def main():
     state["curdir"] = DIRS.index(directions[0])
     global lastmove
     lastmove = "f"
-    
+
     print("initial curpos =", state["curpos"])
     print("initial curdir =", state["curdir"])
     print("target:", next_target)
