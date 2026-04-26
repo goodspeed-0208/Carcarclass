@@ -1,0 +1,53 @@
+F:155,OUTN
+Tr:696 || INN,dir:L
+L:591,OUTN
+uid:65a6f872,Tr:316,INN,dir:T
+T:796,OUTN
+Tr:446 || INN,dir:F
+F:205,OUTN
+Tr:593 || INN,dir:F
+F:155,OUTN
+uid:d5ed3e73,Tr:548,INN,dir:B
+OUTN
+B:1033 || INN,dir:LB
+LB:463,OUTN
+Tr:645 || INN,dir:L
+L:540,OUTN
+Tr:516 || INN,dir:R
+R:437,OUTN
+Tr:567 || INN,dir:R
+R:489,OUTN
+Tr:541 || INN,dir:L
+L:411,OUTN
+Tr:594 || INN,dir:R
+R:565,OUTN
+uid:5205171e,Tr:341,INN,dir:B
+OUTN
+B:1343 || INN,dir:LB
+LB:309,OUTN
+Tr:644 || INN,dir:L
+L:642,OUTN
+Tr:413 || INN,dir:F
+F:206,OUTN
+Tr:592 || INN,dir:R
+R:540,OUTN
+uid:9ac053bd,Tr:368,INN,dir:T
+T:848,OUTN
+Tr:497 || INN,dir:F
+F:155,OUTN
+uid:f159af1e,Tr:625,INN,dir:STOP
+--- FINAL REPORT ---ime(ms),MaxTime(ms),MinTime(ms),AvgTime(ms)
+Track_150,6,3507,645,516,584
+Track_200,1,593,593,593,593
+Track_Accel,1,413,413,413,413
+Track_Decel,2,1288,696,592,644
+Track_UTurn_in,5,2198,625,316,439
+Track_UTurn_out,2,943,497,446,471
+Turn_F,5,876,206,155,175
+Turn_L,4,2184,642,411,546
+Turn_R,4,2031,565,437,507
+Turn_B,2,2376,1343,1033,1188
+Turn_T,2,1644,848,796,822
+Turn_LB,2,772,463,309,386
+--- END REPORT ---
+total time: 19396

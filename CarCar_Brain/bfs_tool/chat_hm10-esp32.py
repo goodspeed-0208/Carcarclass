@@ -17,14 +17,15 @@ LOG_FILE = f"CarCar_Brain/bfs_tool/running_data/run_{time.strftime('%m%d_%H%M%S'
 PORT = 'COM3'
 EXPECTED_NAME = 'HM10_12'
 
-raw_data = pandas.read_csv('medium_maze.csv').values
+raw_data = pandas.read_csv('medium_maze copy.csv').values
 adj = mybfs.build_adjacency_list(raw_data)
-row = 3
+row = 4
 column = 4
 start = 1
 mybfs.init(row, column, start)
-targets = [ 9,10, 12]
+targets = [4, 9, 13, 15, 16]
 scoreboard = None
+#scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 #print(adj)
 last = None
 
@@ -49,10 +50,11 @@ def senddirmsg(bridge, state):
     global next_target
 
     directions = mybfs.bfs_directions(adj, curpos, DIRS[curdir], next_target)
+    print("dir:", directions)
     commands = mybfs.convert_to_commands(directions, DIRS[curdir])
     if not directions: #find target
-        global scoreboard
-        remaining_time = scoreboard.getTime()
+        #global scoreboard
+        remaining_time = 70#scoreboard.getTime()
         print("Remaining time:", remaining_time)
         print("ready to get target:", next_target)
         targets.remove(next_target)
@@ -116,7 +118,7 @@ def background_listener(bridge, state):
                 uid = match.group(1)
                 print("UID detected:", uid)
 
-                handle_uid(uid)
+                #handle_uid(uid)
 
 
             
@@ -149,13 +151,13 @@ def main():
 
     print(f"✨ Ready! Connected to {EXPECTED_NAME}")
     global scoreboard
-    scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 
     print("start =", start)
     state["curpos"] = start
 
     best_time, path, start_dir = mydp_new.getorder(adj, start, -1, None, targets, 10000)#scoreboard.getTime())
     print("start_dir", start_dir)
+    print("EXPECTED_TIME", best_time)
     global next_target
     next_target = targets[path[0][0]]
     directions = mybfs.bfs_directions(adj, start, DIRS[start_dir], next_target)
@@ -167,7 +169,7 @@ def main():
     print("initial curpos =", state["curpos"])
     print("initial curdir =", state["curdir"])
     print("target:", next_target)
-
+    global scoreboard
     threading.Thread(
         target=background_listener,
         args=(bridge, state),

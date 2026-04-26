@@ -4,12 +4,33 @@ from collections import deque
 import heapq
 
 DIRS = ["north", "east", "south", "west"]
+# 150 200 add minus innode back
+# foward left right turn back lb rb 
+track_time = {
+    "150": 0.579,
+    "200": 0.58638,
+    "add": 0.53057,
+    "minus": 0.61033,
+    "innode": 0.48033,
+    "back": 0.44279
+}
+
+# Second dictionary with action keys
+turn_time = {
+    "F": 0.1867,
+    "L": 0.48818,
+    "R": 0.49015,
+    "T": 0.78214,
+    "B": 1.016,
+    "LB": 0.47525,
+    "RB": 0.4505
+}
 
 COST = {
-    "ff": 1.0, "fr": 1.2, "fl": 1.2, "fb": 1.6,
-    "rf": 1.1, "rr": 1.0, "rl": 1.3, "rb": 1.2,
-    "lf": 1.1, "lr": 1.3, "ll": 1.0, "lb": 1.5,
-    "bf": 1.4, "br": 1.2, "bl": 1.2, "bb": 1.0
+    "ff": track_time["200"]+turn_time["F"], "fr": track_time["minus"]+turn_time["R"], "fl": track_time["minus"]+turn_time["L"], "fb": track_time["innode"],
+    "rf": track_time["add"]+turn_time["F"], "rr": track_time["150"]+turn_time["R"], "rl": track_time["150"]+turn_time["L"], "rb": track_time["innode"],
+    "lf": track_time["add"]+turn_time["F"], "lr": track_time["150"]+turn_time["R"], "ll": track_time["150"]+turn_time["L"], "lb": track_time["innode"],
+    "bf": turn_time["T"]+track_time["back"]+turn_time["F"], "br": turn_time["B"]+turn_time["RB"], "bl": turn_time["B"]+turn_time["LB"], "bb": 100000
 }
 
 def get_relative_move(prev_dir, curr_dir):

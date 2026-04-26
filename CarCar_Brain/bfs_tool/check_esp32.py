@@ -37,7 +37,7 @@ def senddirmsg(state):
     curpos = state["curpos"]
     curdir = state["curdir"]
 
-    remaining_time = scoreboard.getTime()
+    remaining_time = 100#scoreboard.getTime()
     print("Remaining time:", remaining_time)
     global lastmove
     global next_target
@@ -82,7 +82,7 @@ def main():
     
     print(f"✨ Ready! Connected to {EXPECTED_NAME}")
     global scoreboard
-    scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
+    #scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 
     print("start =", start)
     state["curpos"] = start
@@ -104,7 +104,7 @@ def main():
     print("initial curdir =", state["curdir"])
     print("target:", next_target)
     
-    while scoreboard.getTime() > 0 :
+    while True :
         c = input()
         if c == "e" : break
         else :

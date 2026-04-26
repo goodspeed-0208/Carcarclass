@@ -1,0 +1,22 @@
+fF:180,OUTN
+Tr:619 || INN,dir:F
+F:180,OUTN
+Tr:618 || INN,dir:L
+L:540,OUTN
+Tr:490 || INN,dir:F
+F:206,OUTN
+uid:53fe3c31,Tr:573,INN,dir:T
+T:720,OUTN
+Tr:419 || INN,dir:F
+F:232,OUTN
+Tr:618 || INN,dir:R
+R:540,OUTN
+Tr:542 || INN,dir:R
+R:514,OUTN
+Tr:541 || INN,dir:L
+L:463,OUTN
+Tr:593 || INN,dir:R
+R:591,OUTN
+uid:5205171e,Tr:368,INN,dir:B
+OUTN
+B:1290 || INN,dir:LB
