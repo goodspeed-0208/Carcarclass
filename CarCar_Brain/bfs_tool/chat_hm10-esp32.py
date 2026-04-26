@@ -1,6 +1,7 @@
 from hm10_esp32 import HM10ESP32Bridge
 import mybfs
 import mydp
+import mydp_new
 import pandas
 import time
 import sys
@@ -24,7 +25,6 @@ start = 1
 mybfs.init(row, column, start)
 targets = [ 9,10, 12]
 scoreboard = None
-scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 #print(adj)
 last = None
 
@@ -36,34 +36,42 @@ state = {
     "curdir": ""   # 這裡要改成你的車一開始真正面向的方向
 }
 
+lastmove = None
+next_target = None
+
 def senddirmsg(bridge, state):
     if (len(targets) == 0) : return
     curpos = state["curpos"]
     curdir = state["curdir"]
     #print("curpos", curpos)
     #print("curdir", curdir)
-    global scoreboard
-    remaining_time = 70#scoreboard.getTime()
-    print("Remaining time:", remaining_time)
-    path, start_dir = mydp.getorder(adj, curpos, curdir, targets, remaining_time)
-    directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
+    global lastmove
+    global next_target
+
+    directions = mybfs.bfs_directions(adj, curpos, DIRS[curdir], next_target)
     commands = mybfs.convert_to_commands(directions, DIRS[curdir])
     if not directions: #find target
-        print("ready to get target:", targets[path[0][0]])
-        targets.remove(targets[path[0][0]])
+        global scoreboard
+        remaining_time = scoreboard.getTime()
+        print("Remaining time:", remaining_time)
+        print("ready to get target:", next_target)
+        targets.remove(next_target)
         if (len(targets) == 0) : #end
             print("send:stop")
             bridge.send("Dir:stop\n")
             return
         else :
-            path, start_dir = mydp.getorder(adj, curpos, curdir, targets, remaining_time)
-            directions = mybfs.bfs_directions(adj, curpos, DIRS[start_dir], targets[path[0][0]])
+            best_time, path, start_dir = mydp_new.getorder(adj, curpos, curdir, lastmove, targets, remaining_time)
+            next_target = targets[path[0][0]]
+            directions = mybfs.bfs_directions(adj, curpos, DIRS[curdir], next_target)
             commands = mybfs.convert_to_commands(directions, DIRS[curdir])
+
     if (commands[0] == 'b') :
         if (len(commands) > 1 and commands[1] == 'f') :
             commands = "t"
+
     global last
-    print("target:", targets[path[0][0]])
+    print("target:", next_target)
     if (last == 'b' and (commands[0] == 'r' or commands[0] == 'l')):
         print("send:b", commands[0])
         bridge.send("Dir:"+commands[0]+"b\n")
@@ -140,13 +148,25 @@ def main():
         sys.exit(0)
 
     print(f"✨ Ready! Connected to {EXPECTED_NAME}")
+    global scoreboard
+    scoreboard = score.ScoreboardServer("GOODSPEED", "http://140.112.175.18")
 
     print("start =", start)
     state["curpos"] = start
-    state["curdir"] = (mydp.getorder(adj, start, -1, targets, 65))[1]
-    state["curpos"] = mybfs.move(state["curpos"], DIRS[state["curdir"]])
+
+    best_time, path, start_dir = mydp_new.getorder(adj, start, -1, None, targets, 10000)#scoreboard.getTime())
+    print("start_dir", start_dir)
+    global next_target
+    next_target = targets[path[0][0]]
+    directions = mybfs.bfs_directions(adj, start, DIRS[start_dir], next_target)
+    state["curpos"] = mybfs.move(start, directions[0])
+    state["curdir"] = DIRS.index(directions[0])
+    global lastmove
+    lastmove = "f"
+
     print("initial curpos =", state["curpos"])
     print("initial curdir =", state["curdir"])
+    print("target:", next_target)
 
     threading.Thread(
         target=background_listener,
