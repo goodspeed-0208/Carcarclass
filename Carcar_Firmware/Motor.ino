@@ -28,11 +28,19 @@ void CarCar::MotorWriting(int deltaTime) {
     last_motor_vL = vL;
     last_motor_vR = vR;
 
+    int vL_error = 0, vR_error = 0;
+
+    if(vL > 0) vL_error = (abs(vL) * 3 + 50) / 100;
+    else if(vL < 0) vL_error = back_motor_error;
+
+    if(vR > 0) vR_error = (abs(vR) * 3 + 50) / 100;
+    else if(vR < 0) vR_error = back_motor_error;
+
     /*int vL_error = (abs(vL) * 3 + 50) / 100;
     int vR_error = (abs(vR) * 3 + 50) / 100;*/
 
-    int vL_error = motor_error;
-    int vR_error = motor_error;
+    /*int vL_error = motor_error;
+    int vR_error = motor_error;*/
 
     if (vL > 0) vL = max(0, vL + vL_error);
     else if (vL < 0) vL = min(0, vL - vL_error);

@@ -7,23 +7,23 @@ DIRS = ["north", "east", "south", "west"]
 # 150 200 add minus innode back
 # foward left right turn back lb rb 
 track_time = {
-    "150": 0.579,
-    "200": 0.58638,
-    "add": 0.53057,
-    "minus": 0.61033,
-    "innode": 0.48033,
-    "back": 0.44279
+    "150": 0.57702,
+    "200": 0.58156,
+    "add": 0.52928,
+    "minus": 0.61119,
+    "innode": 0.46593,
+    "back": 0.44665
 }
 
 # Second dictionary with action keys
 turn_time = {
-    "F": 0.1867,
-    "L": 0.48818,
-    "R": 0.49015,
-    "T": 0.78214,
-    "B": 1.016,
-    "LB": 0.47525,
-    "RB": 0.4505
+    "F": 0.1869,
+    "L": 0.49709,
+    "R": 0.49645,
+    "T": 0.78523,
+    "B": 1.04317,
+    "LB": 0.47318,
+    "RB": 0.50314
 }
 
 COST = {

@@ -103,9 +103,10 @@ public:
 
 
   int forwardspeed = 160;
-  int backwardspeed = forwardspeed;
-  int turnBackSpeed_first = 200;
-  int turnBackSpeed_second = 160;
+  int backwardspeed_first = forwardspeed;
+  int backwardspeed_second = forwardspeed / 1.6;
+  int turnBackSpeed_first = 160;
+  int turnBackSpeed_second = 80;
   int turnOuterSpeed = forwardspeed;
   int turnInnerSpeed = int((turnOuterSpeed - 14) * 0.15) + 14;
   int turnOuterSpeed_back = forwardspeed;
@@ -134,6 +135,7 @@ public:
   double maxAcceleration = 512.0 / targetLoopTime;  //11基本上就是沒有最大加速度限制
 
   int motor_error = 3;
+  int back_motor_error = 2;
 
   //RFID
   String visitedUIDs[30]; 
@@ -214,8 +216,8 @@ private:
   int turntime = 0;
   int Min_forward_turntime = 15000 / forwardspeed;
   int Min_rightleft_turntime = 60000 / turnOuterSpeed;
-  int Min_turnback_turntime = 97500 / turnBackSpeed_first;
-  int Min_backward_turntime = 120000 / forwardspeed;
+  int Min_turnback_turntime = 50000 / turnBackSpeed_first;
+  int Min_backward_turntime = 112000 / forwardspeed;
   Direction dir;  // left right forward baackward
   Direction mode[8] = { RIGHT, TURN_BACK, FORWARD, TURN_BACK, LEFT, TURN_BACK, FORWARD, TURN_BACK };
   int modeState = 0;
@@ -298,8 +300,8 @@ void loop() {
     nextLoopTime += targetLoopTime;
 
     mycar.readIR();
-    //mycar.navigating(deltatime);
-    mycar.adjust_motor_error(deltatime);
+    mycar.navigating(deltatime);
+    //mycar.adjust_motor_error(deltatime);
     //mycar.run_turn_test(deltatime);
 
     //檢查loop花費時間

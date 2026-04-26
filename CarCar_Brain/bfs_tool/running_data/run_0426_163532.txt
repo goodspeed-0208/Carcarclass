@@ -1,2 +1,0 @@
-F:129,OUTN
-Tr:593 || INN,dir:F

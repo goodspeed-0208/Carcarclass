@@ -1,9 +1,0 @@
-Tr:670 || INN,dir:L
-L:386,OUTN
-Tr:645 || INN,dir:R
-R:2257,OUTN
-Tr:1956 || INN,dir:L
-L:386,OUTN
-uid:f159af1e,Tr:574,INN,dir:B
-OUTN
-B:1033 || INN,dir:T

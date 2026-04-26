@@ -133,11 +133,14 @@ void CarCar::turnback() {
 }
 
 void CarCar::goBackward() {  //turning持續到回到上一個節點，目前功能尚不齊全
-	target_motor_vL = -forwardspeed, target_motor_vR = -forwardspeed;
+	target_motor_vL = -backwardspeed_first, target_motor_vR = -backwardspeed_first;
 	if (isInnode && IRsum <= 2) {
 		isInnode = 0;
 		String btMsg = "OUTN";
 		Serial3.println(btMsg);
+	}
+	if (turntime >= Min_backward_turntime){
+		target_motor_vL = -backwardspeed_second, target_motor_vR = -backwardspeed_second;
 	}
 	if (turntime >= Min_backward_turntime && !isInnode && IRsum >= 4) {
 		turning = 1;
@@ -464,7 +467,9 @@ void CarCar::run_turn_test(int deltaTime) {
 
 void CarCar::reportData() {
 	// Use CSV format for easy computer parsing
-	Serial3.println(F("--- FINAL REPORT ---\nAction,Count,TotalTime(ms),MaxTime(ms),MinTime(ms),AvgTime(ms)"));
+	Serial3.println(F("--- FINAL REPORT ---"));
+	delay(40);
+	Serial3.println(F("Action,Count,TotalTime(ms),MaxTime(ms),MinTime(ms),AvgTime(ms)"));
 
 	delay(50);
 

@@ -1,4 +1,0 @@
-F:154,OUTN
-uid:5205171e,Tr:600,INN,dir:B
-OUTN
-B:982 || INN,dir:LB

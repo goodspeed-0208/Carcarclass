@@ -36,7 +36,8 @@ T:848,OUTN
 Tr:497 || INN,dir:F
 F:155,OUTN
 uid:f159af1e,Tr:625,INN,dir:STOP
---- FINAL REPORT ---ime(ms),MaxTime(ms),MinTime(ms),AvgTime(ms)
+--- FINAL REPORT ---
+Action,Count,TotalTime(ms),MaxTime(ms),MinTime(ms),AvgTime(ms)
 Track_150,6,3507,645,516,584
 Track_200,1,593,593,593,593
 Track_Accel,1,413,413,413,413
