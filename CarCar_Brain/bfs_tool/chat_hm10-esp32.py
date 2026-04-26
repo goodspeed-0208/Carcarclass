@@ -7,6 +7,11 @@ import sys
 import threading
 import score
 import re
+import os
+
+if not os.path.exists("running_data"):
+    os.makedirs("running_data")
+LOG_FILE = f"running_data/run_{time.strftime('%m%d_%H%M%S')}.txt"
 
 PORT = 'COM3'
 EXPECTED_NAME = 'HM10_12'
@@ -91,6 +96,9 @@ def background_listener(bridge, state):
                 break # 沒有完整的行了，跳出內圈去睡覺
                 
             print(f"{msg}") #[HM10]:
+
+            with open(LOG_FILE, "a", encoding="utf-8") as f:
+                f.write(msg + "\n")
 
             if "INN" in msg:
                 senddirmsg(bridge, state)
